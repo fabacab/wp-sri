@@ -29,6 +29,10 @@ This plugin is still somewhat skeletal. Feature requests and patches are welcome
 
 == Change log ==
 
+= Version 0.2 =
+
+* Feature: A simple administrative interface can be found under the "Subresource Integrity Manager" option in your WordPress Tools menu. This interface allows you to view the URL and hash pairs currently known by your site, and to delete them. Deleting a known hash will cause WordPress to refetch and rehash the resource when it is next requested.
+
 = Version 0.1 =
 
 * Initial release.

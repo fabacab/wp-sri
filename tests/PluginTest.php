@@ -28,6 +28,15 @@ class WP_SRI_Plugin_Test extends WP_UnitTestCase {
         $this->assertEquals( $expected_hash, $encoded_hash );
     }
 
+    public function test_deleteKnownHash () {
+        update_option('wp_sri_known_hashes', array(
+            '//cdn.datatables.net/1.10.6/js/jquery.dataTables.min.js' => 'JOLmOuOEVbUWcM57vmy0F48W/2S7UCJB3USm7/Tu10U='
+        ));
+        $remaining_known_hashes = array();
+        $this->plugin->deleteKnownHash('//cdn.datatables.net/1.10.6/js/jquery.dataTables.min.js');
+        $this->assertEquals($remaining_known_hashes, get_option('wp_sri_known_hashes'));
+    }
+
     public function test_filterLinkTag () {
         // TODO: write a test with mock HTTP responses?
     }

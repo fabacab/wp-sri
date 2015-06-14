@@ -9,3 +9,5 @@
 if (!defined('WP_UNINSTALL_PLUGIN')) { exit(); }
 
 delete_option('wp_sri_known_hashes');
+delete_metadata('user', 0, 'wp_sri_hashes_per_page', '', true);
+delete_metadata('user', 0, 'managetools_page_wp_sri_admincolumnshidden', '', true);
