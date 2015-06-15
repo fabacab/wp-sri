@@ -194,6 +194,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         }
         $wp_sri_hashes_table->prepare_items();
 ?>
+<div class="wrap">
 <h2><?php esc_html_e('Subresource Integrity Manager', 'wp-sri');?></h2>
 <form action="<?php print admin_url('tools.php?page=' . $this->prefix . 'admin');?>" method="post">
 <?php
@@ -202,6 +203,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         $wp_sri_hashes_table->display();
 ?>
 </form>
+</div><!-- .wrap -->
 <?php
         $this->showDonationAppeal();
     }
