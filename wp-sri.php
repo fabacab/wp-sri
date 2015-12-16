@@ -3,7 +3,7 @@
  * Plugin Name: Subresource Integrity (SRI) Manager
  * Plugin URI: https://maymay.net/blog/projects/wp-sri/
  * Description: A utility to easily add SRI security checks to your generated WordPress pages. <strong>Like this plugin? Please <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&amp;business=TJLPJYXHSRBEE&amp;lc=US&amp;item_name=WordPress%20Subresource%20Integrity%20Plugin&amp;item_number=wp-sri&amp;currency_code=USD&amp;bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted" title="Send a donation to the maintainer">donate</a>. &hearts; Thank you!</strong>
- * Version: 0.2
+ * Version: 0.2.1
  * Author: Meitar Moscovitz <meitar@maymay.net>
  * Author URI: https://maymay.net/
  * Text Domain: wp-sri
@@ -61,7 +61,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
      */
     public function addIntegrityAttribute ($tag, $url) {
         $known_hashes = $this->getKnownHashes();
-        $sri_att = ' integrity="sha256-' . $known_hashes[$url] . '"';
+        $sri_att = ' crossorigin="anonymous" integrity="sha256-' . $known_hashes[$url] . '"';
         $insertion_pos = strpos($tag, '>');
         // account for self-closing tags
         if (0 === strpos($tag, '<link ')) {

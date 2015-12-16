@@ -3,7 +3,7 @@ Contributors: meitar
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=TJLPJYXHSRBEE&lc=US&item_name=WordPress%20Subresource%20Integrity%20Plugin&item_number=wp-sri&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted
 Tags: security, subresource integrity, SRI, MITM, mitigation, DDoS prevention
 Requires at least: 4.1
-Tested up to: 4.2.2
+Tested up to: 4.4
 Stable tag: trunk
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -14,7 +14,7 @@ Adds Subresource Integrity (SRI) attributes to your page's elements for better p
 
 A WordPress plugin for easily adding a [Subresource Integrity (SRI)](//www.w3.org/TR/SRI/) declaration to any third-party content your pages load. The standards-based `integrity` attribute is a defense-in-depth best practice currently making its way into browsers. This plugin closely tracks the W3C draft.
 
-Currently, the plugin automatically detects any third-party resources (like JavaScript libraries) and will make a SHA-256 hash of the content. It remembers this hash (until you uninstall the plugin), and modifies your page's `<script>` and `<link>` elements on-the-fly. This way, your visitor's Web browsers can automatically ensure that the specific library you're using is the one they're loading.
+Currently, the plugin automatically detects any third-party resources (like JavaScript libraries) and will make a SHA-256 hash of the content. It remembers this hash (until you uninstall the plugin or delete the hash from the admin interface), and modifies your page's `<script>` and `<link>` elements on-the-fly. This way, your visitor's Web browsers can automatically ensure that the specific library you're using is the one they're loading.
 
 Using this plugin can dramatically reduce the liklihood that visitors to your site will be strong-armed into participating in an HTTP DDoS attack. For more information, see "[An introduction to JavaScript-based DDoS](https://blog.cloudflare.com/an-introduction-to-javascript-based-ddos/)" by Nick Sullivan.
 
@@ -28,6 +28,10 @@ This plugin is still somewhat skeletal. Feature requests and patches are welcome
 1. Activate the plugin through the 'Plugins' menu in WordPress.
 
 == Change log ==
+
+= Version 0.2.1 =
+
+* Add the `crossorigin="anonymous"` attribute/value pair to modified elements to enable Firefox 43's handling of integrity checks.
 
 = Version 0.2 =
 
