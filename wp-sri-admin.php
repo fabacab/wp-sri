@@ -44,7 +44,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
         );
     }
 
-    function column_cb ($item) {
+    public function column_cb ($item) {
         return sprintf(
             '<input type="checkbox" name="url[]" value="%s" />', rawurlencode($item['url'])
         );

@@ -3,7 +3,7 @@
  * Plugin Name: Subresource Integrity (SRI) Manager
  * Plugin URI: https://maymay.net/blog/projects/wp-sri/
  * Description: A utility to easily add SRI security checks to your generated WordPress pages. <strong>Like this plugin? Please <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&amp;business=TJLPJYXHSRBEE&amp;lc=US&amp;item_name=WordPress%20Subresource%20Integrity%20Plugin&amp;item_number=wp-sri&amp;currency_code=USD&amp;bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted" title="Send a donation to the maintainer">donate</a>. &hearts; Thank you!</strong>
- * Version: 0.2.1
+ * Version: 0.2.2
  * Author: Meitar Moscovitz <meitar@maymay.net>
  * Author URI: https://maymay.net/
  * Text Domain: wp-sri
@@ -18,6 +18,7 @@ class WP_SRI_Plugin {
     private $prefix = 'wp_sri_'; //< Prefix of plugin options, etc.
 
     public function __construct () {
+        add_action('plugins_loaded', array($this, 'registerL10n'));
         add_action('current_screen', array($this, 'processActions'));
         add_action('admin_menu', array($this, 'registerAdminMenu'));
 
@@ -25,6 +26,11 @@ class WP_SRI_Plugin {
         add_filter('script_loader_tag', array($this, 'filterTag'), 999999, 3);
         add_filter('set-screen-option', array($this, 'setAdminScreenOptions'), 10, 3);
     }
+
+    public function registerL10n () {
+        load_plugin_textdomain('wp-sri', false, dirname(plugin_basename(__FILE__)) . '/languages/');
+    }
+
 
     private function showDonationAppeal () {
 ?>

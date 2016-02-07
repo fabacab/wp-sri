@@ -29,6 +29,10 @@ This plugin is still somewhat skeletal. Feature requests and patches are welcome
 
 == Change log ==
 
+= Version 0.2.2 =
+
+* [Bugfix](https://github.com/meitar/wp-sri/issues/1): Load plugin `textdomain` files to prepare for translation.
+
 = Version 0.2.1 =
 
 * Add the `crossorigin="anonymous"` attribute/value pair to modified elements to enable Firefox 43's handling of integrity checks.
