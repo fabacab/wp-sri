@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/machouinard/wp-sri.svg?branch=master)](https://travis-ci.org/machouinard/wp-sri)
+[![Build Status](https://travis-ci.org/machouinard/wp-sri.svg?branch=exclude-urls)](https://travis-ci.org/machouinard/wp-sri)
+
 # Plugin Name #
 **Contributors:** meitar, machouinard
   
