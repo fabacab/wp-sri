@@ -30,7 +30,8 @@ This plugin is still somewhat skeletal. Feature requests and patches are welcome
 == Change log ==
 
 = Version 0.3.0 =
-* Feature; Add ability to exclude URLs if SRI attributes cause blocking
+
+* Feature: Add ability to exclude URLs if SRI attributes cause blocking
 
 = Version 0.2.2 =
 
