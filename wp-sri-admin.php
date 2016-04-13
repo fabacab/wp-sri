@@ -11,11 +11,17 @@ if (!class_exists('WP_List_Table')) {
 
 class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 
+    protected $sri_exclude; // Options array of excluded asset URLs
+
     public function __construct () {
+
+        $this->sri_exclude = get_option( 'sri-exclude', array() ); // Get our excluded option array
+
         parent::__construct(array(
             'singular' => esc_html__('Known Hash', 'wp-sri'),
             'plural' => esc_html__('Known Hashes', 'wp-sri'),
-            'ajax' => false
+            'ajax' => false,
+            'screen' => get_current_screen()// https://wordpress.org/support/topic/php-notice-because-constructor-for-class-wp_list_table?replies=1
         ));
     }
 
@@ -26,6 +32,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
     public function get_columns () {
         return array(
             'cb' => '<input type="checkbox" />',
+            'exclude' => esc_html__( 'Exclude', 'wp-sri' ),
             'url' => esc_html__('URL', 'wp-sri'),
             'hash' => esc_html__('Hash', 'wp-sri')
         );
@@ -35,6 +42,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
         return array(
             'url' => array('url', false),
             'hash' => array('hash', false),
+            'exclude' => array( 'exclude', true )
         );
     }
 
@@ -51,7 +59,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
     }
 
     private function usort_reorder ($a, $b) {
-        $orderby = (!empty($_GET['orderby'])) ? $_GET['orderby'] : 'url';
+        $orderby = (!empty($_GET['orderby'])) ? $_GET['orderby'] : 'exclude';
         $order = (!empty($_GET['order'])) ? $_GET['order'] : 'asc';
         $result = strcmp($a[$orderby], $b[$orderby]);
         return ($order === 'asc') ? $result : -$result;
@@ -71,7 +79,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
         }
         $total_hashes = count($known_hashes);
         $show_on_page = $this->get_items_per_page('wp_sri_hashes_per_page', 20);
-        $shown_hashes = array_slice($known_hashes, (($this->get_pagenum() - 1) * $show_on_page), $show_on_page);
+
         $this->set_pagination_args(array(
             'total_items' => $total_hashes,
             'total_pages' => ceil($total_hashes / $show_on_page),
@@ -79,14 +87,39 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
         ));
 
         $items = array();
-        foreach ($shown_hashes as $url => $hash) {
+        foreach ($known_hashes as $url => $hash) {
+            $exclude = ( false !== array_search( $url, $this->sri_exclude ) ) ? 'a' : 'b';
             $items[] = array(
                 'url' => $url,
-                'hash' => $hash
+                'hash' => $hash,
+                'exclude' => $exclude
             );
         }
+
         usort($items, array(&$this, 'usort_reorder'));
-        return $this->items = $items;
+        $shown_hashes = array_slice($items, (($this->get_pagenum() - 1) * $show_on_page), $show_on_page);
+        return $this->items = $shown_hashes;
+    }
+
+    /**
+     * Create our output for the Excluded column.
+     * If the row's $url is in our excluded array, make sure box is checked.
+     * We include a loading image which is hidden using CSS by default.
+     * 
+     * @param $item
+     *
+     * @return string
+     */
+    protected function column_exclude( $item ) {
+        $url  = esc_url( $item['url'] );
+        $hash = $item['hash'];
+        if ( false !== array_search( $url, $this->sri_exclude) ) {
+            $checked = 'checked="checked"';
+        } else {
+            $checked = '';
+        }
+        $loading = plugin_dir_url( __FILE__ ) . 'css/working.gif'; // image shown during AJAX request to indicate something is happening.
+       return sprintf('<input type="checkbox" class="sri-exclude" id="%s" %s><span class="sri-loading"><img src="%s"/> </span>', $url, $checked, $loading );
     }
 
     protected function column_url ($item) {
@@ -115,5 +148,34 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 
     protected function column_default ($item, $column_name) {
         return $item[$column_name];
+    }
+
+    public static function update_sri_exclude() {
+
+        check_ajax_referer( 'sri-update-exclusion', 'security' );
+
+        $update = false;
+
+        $excluded = get_option( 'sri-exclude', array() );
+        $url = esc_url( $_POST['url'] );
+        $checked = filter_var( $_POST['checked'], FILTER_VALIDATE_BOOLEAN );
+
+        if ( $checked ) {
+            if ( ! in_array( $url, $excluded ) ) {
+                $excluded[] = $url;
+                $update = true;
+            }
+        } else {
+            if ( false !== ($key = array_search( $url, $excluded)) ) {
+                unset( $excluded[$key] );
+                $update = true;
+            }
+        }
+
+        if ( $update ) {
+            update_option( 'sri-exclude', $excluded );
+        }
+
+        wp_send_json_success( 'done' );
     }
 }

@@ -3,7 +3,7 @@
  * Plugin Name: Subresource Integrity (SRI) Manager
  * Plugin URI: https://maymay.net/blog/projects/wp-sri/
  * Description: A utility to easily add SRI security checks to your generated WordPress pages. <strong>Like this plugin? Please <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&amp;business=TJLPJYXHSRBEE&amp;lc=US&amp;item_name=WordPress%20Subresource%20Integrity%20Plugin&amp;item_number=wp-sri&amp;currency_code=USD&amp;bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted" title="Send a donation to the maintainer">donate</a>. &hearts; Thank you!</strong>
- * Version: 0.2.2
+ * Version: 0.3.0
  * Author: Meitar Moscovitz <meitar@maymay.net>
  * Author URI: https://maymay.net/
  * Text Domain: wp-sri
@@ -12,10 +12,15 @@
 
 if (!defined('ABSPATH')) { exit; } // Disallow direct HTTP access.
 
+if ( ! defined( 'SRI_JS_URL' ) ) define( 'SRI_JS_URL', plugin_dir_url( __FILE__ ) . 'js/wp-sri.js' );
+if ( ! defined( 'SRI_STYLE_URL' ) ) define( 'SRI_STYLE_URL', plugin_dir_url( __FILE__ ) . 'css/wp-sri.css' );
+
 require_once dirname(__FILE__) . '/wp-sri-admin.php';
 
 class WP_SRI_Plugin {
     private $prefix = 'wp_sri_'; //< Prefix of plugin options, etc.
+    private $sri_exclude; // Options array of excluded asset URLs
+    private $version = "0.3.0";
 
     public function __construct () {
         add_action('plugins_loaded', array($this, 'registerL10n'));
@@ -25,6 +30,35 @@ class WP_SRI_Plugin {
         add_filter('style_loader_tag', array($this, 'filterTag'), 999999, 2);
         add_filter('script_loader_tag', array($this, 'filterTag'), 999999, 3);
         add_filter('set-screen-option', array($this, 'setAdminScreenOptions'), 10, 3);
+
+        add_action( 'admin_enqueue_scripts', array( $this, 'sri_enqueue_scripts' ) );
+
+        add_action( 'wp_ajax_update_sri_exclude', array( 'WP_SRI_Known_Hashes_List_Table', 'update_sri_exclude' ) );
+        $this->sri_exclude = get_option( 'sri-exclude', array() );
+        $this->sri_exclude_own();
+
+    }
+
+    /**
+     * Was getting errors locally with the stylesheet.
+     */
+    public function sri_exclude_own() {
+        $scripts = array(
+//            'js' => SRI_JS_URL,
+            'css' => esc_url( SRI_STYLE_URL . '?ver=' . $this->version )
+        );
+        foreach ( $scripts as $script ) {
+            if ( false === array_search( $script, $this->sri_exclude ) ) {
+                $this->sri_exclude[] = $script;
+                update_option( 'sri-exclude', $this->sri_exclude );
+            }
+        }
+    }
+
+    public function sri_enqueue_scripts() {
+        wp_enqueue_script( 'sri-exclude-js', SRI_JS_URL , array('jquery'), $this->version, true );
+        $nonce = wp_create_nonce( 'sri-update-exclusion' );
+        wp_localize_script( 'sri-exclude-js', 'options', array( 'security' => $nonce ) );
     }
 
     public function registerL10n () {
@@ -66,6 +100,10 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
      * @return string The HTML tag with an integrity attribute added.
      */
     public function addIntegrityAttribute ($tag, $url) {
+        // If $url is found in our excluded array, return $tag unchanged
+        if ( false !== array_search( esc_url( $url ), $this->sri_exclude) ) {
+            return $tag;
+        }
         $known_hashes = $this->getKnownHashes();
         $sri_att = ' crossorigin="anonymous" integrity="sha256-' . $known_hashes[$url] . '"';
         $insertion_pos = strpos($tag, '>');
@@ -174,6 +212,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
             array($this, 'renderToolPage')
         );
         add_action("load-$hook", array($this, 'addAdminScreenOptions'));
+        add_action( 'admin_print_styles-' . $hook, array( $this, 'addAdminStyle' ) );
     }
 
     public function addAdminScreenOptions () {
@@ -184,6 +223,20 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
             'option' => $this->prefix . 'hashes_per_page'
         ));
         $wp_sri_hashes_table = new WP_SRI_Known_Hashes_List_Table();
+
+        $screen = get_current_screen();
+        $content = '<p>' . __( 'Use your dev tools to see if any assets are being blocked and need to be excluded.', 'wp-sri' ) . '</p>';
+        $content .= '<p>' . __( 'Excluded only means the script/stylesheet will be loaded without the SRI attributes.', 'wp-sri' ) . '</p>';
+        $content .= '<p>' . __( 'Exclusions are updated using AJAX so there\'s no save button.', 'wp-sri' ) . '</p>';
+        $screen->add_help_tab( array(
+            'id' => 'wp_sri_help_tab',
+            'title' => 'SRI Tips',
+            'content' => $content
+        ));
+    }
+
+    public function addAdminStyle() {
+        wp_enqueue_style( 'wp-sri-style', SRI_STYLE_URL, array(), $this->version );
     }
 
     public function setAdminScreenOptions ($status, $option, $value) {
@@ -217,3 +270,4 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
 }
 
 $wp_sri_plugin = new WP_SRI_Plugin();
+
