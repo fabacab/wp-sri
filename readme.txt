@@ -27,11 +27,29 @@ This plugin is still somewhat skeletal. Feature requests and patches are welcome
 1. Upload the unzipped `wp-sri` folder to the `/wp-content/plugins/` directory.
 1. Activate the plugin through the 'Plugins' menu in WordPress.
 
+== Frequently Asked Questions ==
+
+= WP-SRI breaks my plugin/theme. How can I prevent it from blocking my assets? =
+
+If you're a site administrator, you can manually exclude specific resources by their URL from the Subresource Integrity Manager screen under Tools &rarr; Subresource Integrity Manager.
+
+If you're a plugin or theme author, you can use the `option_wp_sri_excluded_hashes` filter hook to dynamically whitelist assets. Please only do this for assets that are truly personalized, that is, only for assets whose URL is always the same but whose content is different for each user or page load.
+
+For example, to ensure that the URL at `https://example.com/personalized_content` is never checked for integrity with SRI attributes, use the following PHP code:
+
+    function example_never_add_integrity_checking( $items ) {
+        $items[] = 'https://example.com/personalized_content';
+        return $items;
+    }
+    add_action( 'option_wp_sri_excluded_hashes', 'example_never_add_integrity_checking' );
+
+Learn more [about this filter hook](https://developer.wordpress.org/reference/hooks/option_option/).
+
 == Change log ==
 
 = Version 0.3.0 =
 
-* Feature: Add ability to exclude URLs if SRI attributes cause blocking
+* [Feature](https://wordpress.org/support/topic/breaks-google-fonts?replies=2): Add ability to exclude URLs. Useful when SRI attributes block personalized assets.
 
 = Version 0.2.2 =
 
@@ -52,4 +70,3 @@ This plugin is still somewhat skeletal. Feature requests and patches are welcome
 == Other notes ==
 
 If you like this plugin, **please consider [making a donation](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&amp;business=TJLPJYXHSRBEE&amp;lc=US&amp;item_name=WordPress%20Subresource%20Integrity%20Plugin&amp;item_number=wp-sri&amp;currency_code=USD&amp;bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted) for your use of the plugin**, [purchasing one of Meitar's web development books](http://www.amazon.com/gp/redirect.html?ie=UTF8&location=http%3A%2F%2Fwww.amazon.com%2Fs%3Fie%3DUTF8%26redirect%3Dtrue%26sort%3Drelevancerank%26search-type%3Dss%26index%3Dbooks%26ref%3Dntt%255Fathr%255Fdp%255Fsr%255F2%26field-author%3DMeitar%2520Moscovitz&tag=maymaydotnet-20&linkCode=ur2&camp=1789&creative=390957) or, better yet, contributing directly to [Meitar's Cyberbusking fund](http://Cyberbusking.org/). (Publishing royalties ain't exactly the lucrative income it used to be, y'know?) Your support is appreciated!
-
