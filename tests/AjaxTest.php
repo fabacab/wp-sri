@@ -4,7 +4,6 @@
  *
  * @group ajax
  * @runTestsInSeparateProcesses
- *
  */
 class WP_SRI_AJAX_TEST extends WP_Ajax_UnitTestCase {
 
@@ -14,7 +13,7 @@ class WP_SRI_AJAX_TEST extends WP_Ajax_UnitTestCase {
 	public function setUp () {
 		parent::setUp();
 
-		$this->excluded = get_option( 'sri-exclude', array() );
+		$this->excluded = get_option( WP_SRI_Plugin::prefix.'excluded_hashes', array() );
 		$this->url = esc_url( 'http://plugins.dev/wp-content/themes/digital-pro/js/my-ajax.js' );
 		$this->excluded[] = $this->url;
 
@@ -44,7 +43,7 @@ class WP_SRI_AJAX_TEST extends WP_Ajax_UnitTestCase {
 			$this->assertEquals( 'done', $response->data );
 
 			// Fetch our option after it's been updated by our PHP function
-			$this->excluded = get_option( 'sri-exclude', array() );
+			$this->excluded = get_option( WP_SRI_Plugin::prefix.'excluded_hashes', array() );
 			$expected_url = esc_url( $_POST['url'] );
 			$result = array_search( $expected_url, $this->excluded );
 			// Verify URL has been added
@@ -77,7 +76,7 @@ class WP_SRI_AJAX_TEST extends WP_Ajax_UnitTestCase {
 			$this->assertEquals( 'done', $response->data );
 
 			// Fetch our option after it's been updated by our PHP function
-			$this->excluded = get_option( 'sri-exclude', array() );
+			$this->excluded = get_option( WP_SRI_Plugin::prefix.'excluded_hashes', array() );
 			// Verify URL has been removed
 			$this->assertFalse( array_search( $this->url, $this->excluded ) );
 		}

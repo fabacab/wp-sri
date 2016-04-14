@@ -9,19 +9,30 @@ if (!class_exists('WP_List_Table')) {
     require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
 }
 
+/**
+ * List table for managing known resource hashes.
+ */
 class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 
-    protected $sri_exclude; // Options array of excluded asset URLs
+    /**
+     * Options array of excluded asset URLs.
+     *
+     * @var array
+     */
+    protected $sri_exclude;
 
+    /**
+     * Constructor.
+     */
     public function __construct () {
 
-        $this->sri_exclude = get_option( 'sri-exclude', array() ); // Get our excluded option array
+        $this->sri_exclude = get_option(WP_SRI_Plugin::prefix.'excluded_hashes', array()); // Get our excluded option array
 
         parent::__construct(array(
             'singular' => esc_html__('Known Hash', 'wp-sri'),
             'plural' => esc_html__('Known Hashes', 'wp-sri'),
             'ajax' => false,
-            'screen' => get_current_screen()// https://wordpress.org/support/topic/php-notice-because-constructor-for-class-wp_list_table?replies=1
+            'screen' => get_current_screen(), // https://wordpress.org/support/topic/php-notice-because-constructor-for-class-wp_list_table?replies=1
         ));
     }
 
@@ -32,9 +43,9 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
     public function get_columns () {
         return array(
             'cb' => '<input type="checkbox" />',
-            'exclude' => esc_html__( 'Exclude', 'wp-sri' ),
             'url' => esc_html__('URL', 'wp-sri'),
-            'hash' => esc_html__('Hash', 'wp-sri')
+            'hash' => esc_html__('Hash', 'wp-sri'),
+            'exclude' => esc_html__( 'Exclude', 'wp-sri' ),
         );
     }
 
@@ -103,6 +114,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 
     /**
      * Create our output for the Excluded column.
+     *
      * If the row's $url is in our excluded array, make sure box is checked.
      * We include a loading image which is hidden using CSS by default.
      * 
@@ -150,13 +162,13 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
         return $item[$column_name];
     }
 
-    public static function update_sri_exclude() {
+    public static function update_sri_exclude () {
 
         check_ajax_referer( 'sri-update-exclusion', 'security' );
 
         $update = false;
 
-        $excluded = get_option( 'sri-exclude', array() );
+        $excluded = get_option(WP_SRI_Plugin::prefix.'excluded_hashes', array());
         $url = esc_url( $_POST['url'] );
         $checked = filter_var( $_POST['checked'], FILTER_VALIDATE_BOOLEAN );
 
@@ -173,7 +185,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
         }
 
         if ( $update ) {
-            update_option( 'sri-exclude', $excluded );
+            update_option( WP_SRI_Plugin::prefix.'excluded_hashes', $excluded );
         }
 
         wp_send_json_success( 'done' );
