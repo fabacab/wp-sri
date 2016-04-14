@@ -14,15 +14,20 @@ if (!defined('ABSPATH')) { exit; } // Disallow direct HTTP access.
 
 if ( ! defined( 'SRI_JS_URL' ) ) define( 'SRI_JS_URL', plugin_dir_url( __FILE__ ) . 'js/wp-sri.js' );
 if ( ! defined( 'SRI_STYLE_URL' ) ) define( 'SRI_STYLE_URL', plugin_dir_url( __FILE__ ) . 'css/wp-sri.css' );
+if ( ! defined( 'SRI_EXCLUDE_KEY' ) ) define( 'SRI_EXCLUDE_KEY', 'wp_sri_exclude' );
 
 require_once dirname(__FILE__) . '/wp-sri-admin.php';
 
 class WP_SRI_Plugin {
     private $prefix = 'wp_sri_'; //< Prefix of plugin options, etc.
     private $sri_exclude; // Options array of excluded asset URLs
+    private $count = 1; // Used for admin update notice
     private $version = "0.3.0";
 
     public function __construct () {
+        // Grab our exclusion array from the options table.
+        $this->sri_exclude = get_option( SRI_EXCLUDE_KEY, array() );
+
         add_action('plugins_loaded', array($this, 'registerL10n'));
         add_action('current_screen', array($this, 'processActions'));
         add_action('admin_menu', array($this, 'registerAdminMenu'));
@@ -34,8 +39,8 @@ class WP_SRI_Plugin {
         add_action( 'admin_enqueue_scripts', array( $this, 'sri_enqueue_scripts' ) );
 
         add_action( 'wp_ajax_update_sri_exclude', array( 'WP_SRI_Known_Hashes_List_Table', 'update_sri_exclude' ) );
-        $this->sri_exclude = get_option( 'sri-exclude', array() );
-        $this->sri_exclude_own();
+        // Give themes a chance to hook into our exclude filter
+        add_action( 'after_setup_theme', array( $this, 'sri_exclude_own' ) );
 
     }
 
@@ -43,20 +48,30 @@ class WP_SRI_Plugin {
      * Was getting errors locally with the stylesheet.
      */
     public function sri_exclude_own() {
+        if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+            return;
+        }
+
         $scripts = array(
-//            'js' => SRI_JS_URL,
-            'css' => esc_url( SRI_STYLE_URL . '?ver=' . $this->version )
+            SRI_JS_URL . '?ver=' . $this->version,
+            SRI_STYLE_URL . '?ver=' . $this->version
         );
-        foreach ( $scripts as $script ) {
+
+        // Allow theme devs to get in on the fun
+        foreach ( apply_filters( 'sri_exclude_array', $scripts ) as $script ) {
+            $script = esc_url( $script );
             if ( false === array_search( $script, $this->sri_exclude ) ) {
                 $this->sri_exclude[] = $script;
-                update_option( 'sri-exclude', $this->sri_exclude );
+                update_option( SRI_EXCLUDE_KEY, $this->sri_exclude );
             }
         }
     }
 
+    /**
+     * Enqueue and localize our JS
+     */
     public function sri_enqueue_scripts() {
-        wp_enqueue_script( 'sri-exclude-js', SRI_JS_URL , array('jquery'), $this->version, true );
+        wp_enqueue_script( 'sri-exclude-js', SRI_JS_URL, array( 'jquery' ), $this->version, true );
         $nonce = wp_create_nonce( 'sri-update-exclusion' );
         wp_localize_script( 'sri-exclude-js', 'options', array( 'security' => $nonce ) );
     }
@@ -176,31 +191,99 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
     }
 
     /**
+     * Update our exclude option based on user action
+     *
+     * @param $url string The URL of of the asset to update
+     *
+     * @param $exclude bool Are we excluding this $url from SRI?
+     */
+    public function updateExcludedUrl( $url, $exclude ) {
+        if ( false === ( $k = array_search( esc_url( $url ), $this->sri_exclude ) ) && $exclude ) {
+            array_push( $this->sri_exclude, esc_url( $url ) );
+        } elseif( false !== $k && ! $exclude ) {
+            unset( $this->sri_exclude[$k] );
+        }
+        update_option( SRI_EXCLUDE_KEY, $this->sri_exclude );
+    }
+
+    /**
      * Responds to administrator actions such as deleting hashes, etc.
      */
     public function processActions () {
-        $wp_sri_hashes_table = new WP_SRI_Known_Hashes_List_Table();
-        if ('delete' === $wp_sri_hashes_table->current_action()) {
-            if (isset($_POST['_' . $this->prefix . 'nonce']) && wp_verify_nonce($_POST['_' . $this->prefix . 'nonce'], 'bulk_delete_sri_hashes')) {
-                foreach ($_POST['url'] as $url) {
-                    $this->deleteKnownHash(rawurldecode($url));
+
+        if (isset($_POST['_' . $this->prefix . 'nonce']) && wp_verify_nonce($_POST['_' . $this->prefix . 'nonce'], 'bulk_update_sri_hashes')) {
+            $wp_sri_hashes_table = new WP_SRI_Known_Hashes_List_Table();
+            $action = $wp_sri_hashes_table->current_action();
+            // So we can customize our admin update notice
+            if ( isset( $_POST['url'] ) ) {
+                $this->count = count( $_POST['url'] );
+            }
+
+            if ( 'delete' === $action ) {
+                foreach ( $_POST['url'] as $url ) {
+                    $this->deleteKnownHash( rawurldecode( $url ) );
                 }
-                add_action('admin_notices', array($this, 'hashDeletedNotice'));
+                add_action( 'admin_notices', array( $this, 'hashDeletedNotice' ) );
+            } elseif ( 'include' === $action ) {
+                foreach ( $_POST['url'] as $url ) {
+                    $this->updateExcludedUrl( rawurldecode( $url ), false );
+                }
+                add_action( 'admin_notices', array( $this, 'includeUrlUpdatedNotice' ) );
+            } elseif ( 'exclude' === $action ) {
+                foreach ( $_POST['url'] as $url ) {
+                    $this->updateExcludedUrl( rawurldecode( $url ), true );
+                }
+                add_action( 'admin_notices', array( $this, 'excludeUrlUpdatedNotice' ) );
             }
         }
 
-        if (isset($_GET['_' . $this->prefix . 'nonce']) && wp_verify_nonce($_GET['_' . $this->prefix . 'nonce'], 'delete_sri_hash')) {
-            $this->deleteKnownHash(rawurldecode($_GET['url']));
-            add_action('admin_notices', array($this, 'hashDeletedNotice'));
+        if (isset($_GET['_' . $this->prefix . 'nonce']) && wp_verify_nonce($_GET['_' . $this->prefix . 'nonce'], 'update_sri_hash')) {
+            $action = $_GET['action'];
+            switch( $action ) {
+                case 'delete':
+                    $this->deleteKnownHash(rawurldecode($_GET['url']));
+                    add_action('admin_notices', array($this, 'hashDeletedNotice'));
+                    break;
+                case 'include':
+                    $this->updateExcludedUrl(rawurldecode($_GET['url']), false );
+                    add_action('admin_notices', array($this, 'includeUrlUpdatedNotice'));
+                    break;
+                case 'exclude':
+                    $this->updateExcludedUrl(rawurldecode($_GET['url']), true );
+                    add_action('admin_notices', array($this, 'excludeUrlUpdatedNotice'));
+                    break;
+                default:
+                    break;
+            }
+
         }
+
+        // Make sure our scripts are added back in case they were removed.
+        $this->sri_exclude_own();
     }
 
     public function hashDeletedNotice () {
 ?>
 <div class="updated notice is-dismissible">
-    <p><?php esc_html_e('Hash has been deleted.', 'wp-sri');?></p>
+    <p><?php printf( esc_html( _n( 'Hash has been deleted', '%s hashes have been deleted', $this->count, 'wp-sri' ) ), $this->count );?></p>
 </div>
 <?php
+    }
+
+    public function excludeUrlUpdatedNotice() {
+        ?>
+        <div class="updated notice is-dismissible">
+            <p><?php printf( esc_html( _n( 'URL has been excluded', '%s URLs have been excluded', $this->count, 'wp-sri' ) ), $this->count ); ?></p>
+        </div>
+        <?php
+    }
+
+    public function includeUrlUpdatedNotice() {
+        ?>
+        <div class="updated notice is-dismissible">
+            <p><?php printf( esc_html( _n( 'URL has been included', '%s URLs have been included', $this->count, 'wp-sri' ) ), $this->count ); ?></p>
+        </div>
+        <?php
     }
 
     public function registerAdminMenu () {
@@ -257,7 +340,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
 <h2><?php esc_html_e('Subresource Integrity Manager', 'wp-sri');?></h2>
 <form action="<?php print admin_url('tools.php?page=' . $this->prefix . 'admin');?>" method="post">
 <?php
-        wp_nonce_field('bulk_delete_sri_hashes', '_' . $this->prefix . 'nonce');
+        wp_nonce_field('bulk_update_sri_hashes', '_' . $this->prefix . 'nonce');
         $wp_sri_hashes_table->search_box(esc_html__('Search', 'wp-sri'), $this->prefix . 'search_hashes');
         $wp_sri_hashes_table->display();
 ?>

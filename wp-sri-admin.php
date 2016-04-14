@@ -15,7 +15,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 
     public function __construct () {
 
-        $this->sri_exclude = get_option( 'sri-exclude', array() ); // Get our excluded option array
+        $this->sri_exclude = get_option( SRI_EXCLUDE_KEY, array() ); // Get our excluded option array
 
         parent::__construct(array(
             'singular' => esc_html__('Known Hash', 'wp-sri'),
@@ -48,7 +48,9 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 
     public function get_bulk_actions () {
         return array(
-            'delete' => esc_html__('Delete', 'wp-sri')
+            'delete' => esc_html__('Delete', 'wp-sri'),
+            'exclude' => esc_html__( 'Exclude', 'wp-sri' ),
+            'include' => esc_html__( 'Include', 'wp-wri' )
         );
     }
 
@@ -105,6 +107,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
      * Create our output for the Excluded column.
      * If the row's $url is in our excluded array, make sure box is checked.
      * We include a loading image which is hidden using CSS by default.
+     * Checkboxes are disabled by default, enabled using JS if available.
      * 
      * @param $item
      *
@@ -119,19 +122,47 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
             $checked = '';
         }
         $loading = plugin_dir_url( __FILE__ ) . 'css/working.gif'; // image shown during AJAX request to indicate something is happening.
-       return sprintf('<input type="checkbox" class="sri-exclude" id="%s" %s><span class="sri-loading"><img src="%s"/> </span>', $url, $checked, $loading );
+       return sprintf('<input disabled="disabled" type="checkbox" class="sri-exclude" id="%s" %s><span class="sri-loading"><img src="%s" /> </span>', $url, $checked, $loading );
     }
 
     protected function column_url ($item) {
         $actions = array(
             'delete' => sprintf(
                 '<a href="?page=%s&amp;action=%s&amp;url=%s&amp;_wp_sri_nonce=%s&amp;orderby=%s&amp;order=%s" title="%s">%s</a>',
-                $_REQUEST['page'], 'delete', rawurlencode($item['url']), wp_create_nonce('delete_sri_hash'),
+                $_REQUEST['page'], 'delete', rawurlencode($item['url']), wp_create_nonce('update_sri_hash'),
                 (!empty($_GET['orderby'])) ? $_GET['orderby'] : '', (!empty($_GET['order'])) ? $_GET['order'] : '',
                 esc_html__('Remove this URL and hash pair.', 'wp-sri'), esc_html__('Delete', 'wp-sri')
             )
+
         );
+        $this->get_exclude_actions( $item, $actions );
         return sprintf('%1$s %2$s', $item['url'], $this->row_actions($actions));
+    }
+
+    /**
+     * Add proper output to $actions array depending on whether or not $item['url'] is being excluded.
+     *
+     * @param $item  array    Table row data
+     * @param $actions  array ref  We're adding our action directoy to the array used in the above column_url() func
+     */
+    protected function get_exclude_actions( $item, &$actions ) {
+
+        $url = esc_url( $item['url'] );
+        if ( false === array_search( $url, $this->sri_exclude ) ) {
+            $actions['exclude'] =  sprintf(
+                '<a href="?page=%s&amp;action=%s&amp;url=%s&amp;_wp_sri_nonce=%s&amp;orderby=%s&amp;order=%s" title="%s">%s</a>',
+                $_REQUEST['page'], 'exclude', rawurlencode($item['url']), wp_create_nonce('update_sri_hash'),
+                (!empty($_GET['orderby'])) ? $_GET['orderby'] : '', (!empty($_GET['order'])) ? $_GET['order'] : '',
+                esc_html__('Exclude this URL.', 'wp-sri'), esc_html__('Exclude', 'wp-sri')
+            );
+        } else {
+            $actions['include'] =  sprintf(
+                '<a href="?page=%s&amp;action=%s&amp;url=%s&amp;_wp_sri_nonce=%s&amp;orderby=%s&amp;order=%s" title="%s">%s</a>',
+                $_REQUEST['page'], 'include', rawurlencode($item['url']), wp_create_nonce('update_sri_hash'),
+                (!empty($_GET['orderby'])) ? $_GET['orderby'] : '', (!empty($_GET['order'])) ? $_GET['order'] : '',
+                esc_html__('Include this URL.', 'wp-sri'), esc_html__('Include', 'wp-sri')
+            );
+        }
     }
 
     // TODO: implement hash editing interface
@@ -156,16 +187,18 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 
         $update = false;
 
-        $excluded = get_option( 'sri-exclude', array() );
+        $excluded = get_option( SRI_EXCLUDE_KEY, array() );
         $url = esc_url( $_POST['url'] );
         $checked = filter_var( $_POST['checked'], FILTER_VALIDATE_BOOLEAN );
 
         if ( $checked ) {
+            // If checked, we add $url to our exclusion array.
             if ( ! in_array( $url, $excluded ) ) {
                 $excluded[] = $url;
                 $update = true;
             }
         } else {
+            // If unchecked, we remove $url from our exclusion array.
             if ( false !== ($key = array_search( $url, $excluded)) ) {
                 unset( $excluded[$key] );
                 $update = true;
@@ -173,7 +206,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
         }
 
         if ( $update ) {
-            update_option( 'sri-exclude', $excluded );
+            update_option( SRI_EXCLUDE_KEY, $excluded );
         }
 
         wp_send_json_success( 'done' );
