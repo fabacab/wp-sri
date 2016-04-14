@@ -2,6 +2,10 @@
     width: 10%;
 }
 
+.sri-exclude {
+    pointer-events: none;
+}
+
 .column-url, .column-hash {
     width: 45%;
 }
