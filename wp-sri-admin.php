@@ -81,10 +81,9 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
     }
 
     public function prepare_items () {
-        global $wp_sri_plugin;
         $this->_column_headers = $this->get_column_info();
 
-        $known_hashes = $wp_sri_plugin->getKnownHashes();
+        $known_hashes = get_option(WP_SRI_Plugin::prefix.'known_hashes', array());
         if (!empty($_POST['s'])) {
             $known_hashes = array_flip(array_filter(array_flip($known_hashes), array($this, 'search')));
         }

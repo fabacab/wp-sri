@@ -114,7 +114,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         if ( false !== array_search( esc_url( $url ), $this->sri_exclude) ) {
             return $tag;
         }
-        $known_hashes = $this->getKnownHashes();
+        $known_hashes = get_option(self::prefix.'known_hashes', array());
         $sri_att = ' crossorigin="anonymous" integrity="sha256-' . $known_hashes[$url] . '"';
         $insertion_pos = strpos($tag, '>');
         // account for self-closing tags
@@ -155,7 +155,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
             (!is_ssl() || $this->isLocalResource($url))
         ) { return $tag; }
 
-        $known_hashes = $this->getKnownHashes();
+        $known_hashes = get_option(self::prefix.'known_hashes', array());
         if (empty($known_hashes[$url])) {
             $resp = $this->fetchResource($url);
             if (is_wp_error($resp)) {
@@ -169,10 +169,6 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         return $this->addIntegrityAttribute($tag, $url);
     }
 
-    public function getKnownHashes () {
-        return get_option(self::prefix . 'known_hashes', array());
-    }
-
     /**
      * Deletes a known hash from the database.
      *
@@ -180,7 +176,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
      * @return bool True on success, false otherwise.
      */
     public function deleteKnownHash ($url) {
-        $known_hashes = $this->getKnownHashes();
+        $known_hashes = get_option(self::prefix . 'known_hashes', array());
         unset($known_hashes[$url]);
         update_option(self::prefix . 'known_hashes', $known_hashes);
     }
@@ -227,20 +223,33 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
 
     public function addAdminScreenOptions () {
         global $wp_sri_hashes_table;
+        $wp_sri_hashes_table = new WP_SRI_Known_Hashes_List_Table();
+
         add_screen_option('per_page', array(
             'label' => esc_html__('Hashes', 'wp-sri'),
             'default' => 20,
             'option' => self::prefix . 'hashes_per_page'
         ));
-        $wp_sri_hashes_table = new WP_SRI_Known_Hashes_List_Table();
 
         $screen = get_current_screen();
-        $content = '<p>' . __( 'Use your dev tools to see if any assets are being blocked and need to be excluded.', 'wp-sri' ) . '</p>';
-        $content .= '<p>' . __( 'Excluded only means the script/stylesheet will be loaded without the SRI attributes.', 'wp-sri' ) . '</p>';
-        $content .= '<p>' . __( 'Exclusions are updated using AJAX so there\'s no save button.', 'wp-sri' ) . '</p>';
+        $content = '<p>';
+        $content .= sprintf(
+            esc_html__('This page lets you manage automatic integrity checks of subresources that your pages on your site load. Subresources are assets that are referenced from within %1$sscript%2$s or %1$slink%2$s elements, such as JavaScript files or stylesheets. When your page loads such assets from servers other than your own, as is often done with Content Delivery Networks (CDNs), you can verify that the requested file contains exactly the code you expect it to by adding an integrity check.', 'wp-sri'),
+            '<code>', '</code>'
+        );
+        $content .= '</p>';
+        $content .= '<ul>';
+        $content .= '<li>' . esc_html__('The "URL" column shows you the Web address of the resource being loaded.', 'wp-sri') . '</li>';
+        $content .= '<li>' . esc_html__('The "Hash" column shows you what WP-SRI thinks the cryptographic hash of the resource should be.', 'wp-sri') . '</li>';
+        $content .= '<li>' . esc_html__('The "Exclude" column lets you tell WP-SRI not to add integrity-checking code to your pages for a given resource.', 'wp-sri') . '</li>';
+        $content .= '</ul>';
+        $content .= '<p><strong>' . esc_html__('Tips', 'wp-sri') . '</strong></p>';
+        $content .= '<ul>';
+        $content .= '<li>' . esc_html__( 'If some pages are not loading correctly, use the developer tools in your Web browser to see if any assets are being blocked and need to be excluded. Excluding an asset means the resource will be added to your pages without the SRI attributes, but WP-SRI will still remember its hash.', 'wp-sri' ) . '</li>';
+        $content .= '</ul>';
         $screen->add_help_tab( array(
-            'id' => 'wp_sri_help_tab',
-            'title' => 'SRI Tips',
+            'id' => self::prefix.'help_tab',
+            'title' => 'Managing Subresource Integrity',
             'content' => $content
         ));
     }
@@ -279,5 +288,4 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
 
 }
 
-$wp_sri_plugin = new WP_SRI_Plugin();
-
+new WP_SRI_Plugin();
