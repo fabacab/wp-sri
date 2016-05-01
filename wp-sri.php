@@ -267,7 +267,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
     public function hashDeletedNotice () {
 ?>
 <div class="updated notice is-dismissible">
-    <p><?php printf( esc_html( _n( 'Hash has been deleted', '%s hashes have been deleted', $this->count, 'wp-sri' ) ), $this->count );?></p>
+    <p><?php printf( esc_html( _n( 'Hash has been forgotten.', '%s hashes have been forgotten.', $this->count, 'wp-sri' ) ), $this->count );?></p>
 </div>
 <?php
     }
@@ -275,7 +275,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
     public function excludeUrlUpdatedNotice() {
         ?>
         <div class="updated notice is-dismissible">
-            <p><?php printf( esc_html( _n( 'URL has been excluded', '%s URLs have been excluded', $this->count, 'wp-sri' ) ), $this->count ); ?></p>
+            <p><?php printf( esc_html( _n( 'Resource has been excluded.', '%s resources have been excluded.', $this->count, 'wp-sri' ) ), $this->count ); ?></p>
         </div>
         <?php
     }
@@ -283,7 +283,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
     public function includeUrlUpdatedNotice() {
         ?>
         <div class="updated notice is-dismissible">
-            <p><?php printf( esc_html( _n( 'URL has been included', '%s URLs have been included', $this->count, 'wp-sri' ) ), $this->count ); ?></p>
+            <p><?php printf( esc_html( _n( 'Resource has been included.', '%s resources have been included.', $this->count, 'wp-sri' ) ), $this->count ); ?></p>
         </div>
         <?php
     }
@@ -313,7 +313,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         $screen = get_current_screen();
         $content = '<p>';
         $content .= sprintf(
-            esc_html__('This page lets you manage automatic integrity checks of subresources that your pages on your site load. Subresources are assets that are referenced from within %1$sscript%2$s or %1$slink%2$s elements, such as JavaScript files or stylesheets. When your page loads such assets from servers other than your own, as is often done with Content Delivery Networks (CDNs), you can verify that the requested file contains exactly the code you expect it to by adding an integrity check.', 'wp-sri'),
+            esc_html__('This page lets you manage automatic integrity checks of subresources that pages on your site load. Subresources are assets that are referenced from within %1$sscript%2$s or %1$slink%2$s elements, such as JavaScript files or stylesheets. When your page loads such assets from servers other than your own, as is often done with Content Delivery Networks (CDNs), you can verify that the requested file contains exactly the code you expect it to by adding an integrity check.', 'wp-sri'),
             '<code>', '</code>'
         );
         $content .= '</p>';
@@ -324,8 +324,9 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         $content .= '</ul>';
         $content .= '<p><strong>' . esc_html__('Tips', 'wp-sri') . '</strong></p>';
         $content .= '<ul>';
-        $content .= '<li>' . esc_html__( 'If some pages are not loading correctly, use the developer tools in your Web browser to see if any assets are being blocked and need to be excluded. Excluding an asset means the resource will be added to your pages without the SRI attributes, but WP-SRI will still remember its hash.', 'wp-sri' ) . '</li>';
+        $content .= '<li>' . esc_html__('If some pages are not loading correctly, use the developer tools in your Web browser to see if any assets are being blocked and need to be excluded. Excluding an asset means the resource will be added to your pages without the SRI attributes, but WP-SRI will still remember its hash.', 'wp-sri') . '</li>';
         $content .= '</ul>';
+        $content .= '<p>' . sprintf(esc_html__('Learn more about %sSubresource Integrity%s features.', 'wp-sri'), '<a href="https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity">', '</a>') . '</p>';
         $screen->add_help_tab( array(
             'id' => self::prefix.'help_tab',
             'title' => 'Managing Subresource Integrity',
