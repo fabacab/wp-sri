@@ -1,0 +1,20 @@
+.column-exclude {
+    width: 10%;
+}
+
+.sri-exclude {
+    pointer-events: none;
+}
+
+.column-url, .column-hash {
+    width: 45%;
+}
+
+.column-exclude input.sri-exclude {
+    margin-left: 2em;
+}
+
+span.sri-loading {
+    float: right;
+    display: none;
+}
