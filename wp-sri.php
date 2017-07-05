@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Subresource Integrity (SRI) Manager
- * Plugin URI: https://maymay.net/blog/projects/wp-sri/
+ * Plugin URI: https://github.com/meitar/wp-sri
  * Description: A utility to easily add SRI security checks to your generated WordPress pages. <strong>Like this plugin? Please <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&amp;business=TJLPJYXHSRBEE&amp;lc=US&amp;item_name=WordPress%20Subresource%20Integrity%20Plugin&amp;item_number=wp-sri&amp;currency_code=USD&amp;bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted" title="Send a donation to the maintainer">donate</a>. &hearts; Thank you!</strong>
  * Version: 0.3.0
  * Author: Meitar Moscovitz <meitar@maymay.net>
@@ -26,29 +26,73 @@ class WP_SRI_Plugin {
      */
     const prefix = 'wp_sri_';
 
-    private $sri_exclude; // Options array of excluded asset URLs
-    private $count = 1; // Used for admin update notice
-    private $version = "0.3.0";
+    /**
+     * Options array of excluded asset URLs.
+     *
+     * @var string[]
+     */
+    private $sri_exclude = array();
+
+    /**
+     * Used for admin update notice.
+     *
+     * @var int
+     */
+    private $count = 1;
+
+    /**
+     * Used for cache busting.
+     *
+     * @var string
+     */
+    private $version = '';
+
+    /**
+     * Fallback cache directory.
+     *
+     * @var string
+     */
+    private $cache_dir = WP_CONTENT_DIR . '/wp-sri-cache';
+
+    /**
+     * Fallback cache URL.
+     *
+     * @var string
+     */
+    private $cache_url = '';
 
     public function __construct () {
         // Grab our exclusion array from the options table.
         $this->sri_exclude = get_option( self::prefix.'excluded_hashes', array() );
+        require_once ABSPATH . '/wp-admin/includes/plugin.php';
+        $plugin_data = get_plugin_data( __FILE__ );
+        $this->version = $plugin_data['Version'];
+        $this->cache_url = content_url( 'wp-sri-cache' );
 
-        add_action('plugins_loaded', array($this, 'registerL10n'));
-        add_action('current_screen', array($this, 'processActions'));
-        add_action('admin_menu', array($this, 'registerAdminMenu'));
-
-        add_filter('style_loader_tag', array($this, 'filterTag'), 999999, 2);
-        add_filter('script_loader_tag', array($this, 'filterTag'), 999999, 3);
-        add_filter('set-screen-option', array($this, 'setAdminScreenOptions'), 10, 3);
-
+        add_action( 'plugins_loaded', array( $this, 'registerL10n' ) );
+        add_action( 'init', array( $this, 'initialize' ) );
+        add_action( 'admin_menu', array( $this, 'registerAdminMenu' ) );
+        add_action( 'current_screen', array( $this, 'processActions' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'sri_enqueue_scripts' ) );
-
-        add_action( 'wp_ajax_update_sri_exclude', array( 'WP_SRI_Known_Hashes_List_Table', 'update_sri_exclude' ) );
-
         // Give themes a chance to hook into our exclude filter
         add_action( 'after_setup_theme', array( $this, 'sri_exclude_own' ) );
+        add_action( 'wp_ajax_update_sri_exclude', array( 'WP_SRI_Known_Hashes_List_Table', 'update_sri_exclude' ) );
 
+        add_filter( 'style_loader_tag', array( $this, 'filterTag' ), 999999, 2 );
+        add_filter( 'script_loader_tag', array( $this, 'filterTag' ), 999999, 3 );
+        add_filter( 'set-screen-option', array( $this, 'setAdminScreenOptions' ), 10, 3 );
+    }
+
+    /**
+     * Ensures the plugin environment is setup.
+     *
+     * @link https://developer.wordpress.org/reference/hooks/init/
+     */
+    public function initialize () {
+        if ( ! file_exists( $this->cache_dir ) ) {
+            mkdir( $this->cache_dir );
+            copy( dirname( __FILE__ ) . '/index.php', "{$this->cache_dir}/index.php" );
+        }
     }
 
     /**
@@ -64,12 +108,18 @@ class WP_SRI_Plugin {
             plugin_dir_url( __FILE__ ) . 'css/wp-sri.css' . '?ver=' . $this->version
         );
 
-        // Allow theme devs to get in on the fun
+        /**
+         * Filters the excluded SRI asset array.
+         *
+         * This allows theme developers to get in on the fun.
+         *
+         * @param string[] $scripts
+         */
         foreach ( apply_filters( 'sri_exclude_array', $scripts ) as $script ) {
             $script = esc_url( $script );
             if ( false === array_search( $script, $this->sri_exclude ) ) {
                 $this->sri_exclude[] = $script;
-                update_option( self::prefix.'excluded_hashes', $this->sri_exclude );
+                update_option( self::prefix . 'excluded_hashes', $this->sri_exclude );
             }
         }
     }
@@ -88,6 +138,9 @@ class WP_SRI_Plugin {
     }
 
 
+    /**
+     * Prints a donation appeal.
+     */
     private function showDonationAppeal () {
 ?>
 <div class="donation-appeal">
@@ -106,12 +159,13 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
      * is being served by the same webserver as this plugin is run on.)
      *
      * @param string $uri The URI of the resource to inspect.
+     *
      * @return bool True if the resource is local, false if the resource is remote.
      */
-    public static function isLocalResource ($uri) {
-        $rsrc_host = parse_url($uri, PHP_URL_HOST);
-        $this_host = parse_url(get_site_url(), PHP_URL_HOST);
-        return (0 === strpos($rsrc_host, $this_host)) ? true : false;
+    public static function isLocalResource ( $uri ) {
+        $rsrc_host = parse_url( $uri, PHP_URL_HOST );
+        $this_host = parse_url( get_site_url(), PHP_URL_HOST );
+        return ( 0 === strpos( $rsrc_host, $this_host ) ) ? true : false;
     }
 
     /**
@@ -119,38 +173,77 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
      *
      * @param string $tag The HTML tag to add the attribute to.
      * @param string $url The URL of the resource to find the hash for.
+     *
      * @return string The HTML tag with an integrity attribute added.
      */
-    public function addIntegrityAttribute ($tag, $url) {
+    public function addIntegrityAttribute ( $tag, $url ) {
         // If $url is found in our excluded array, return $tag unchanged
-        if ( false !== array_search( esc_url( $url ), $this->sri_exclude) ) {
+        if ( false !== array_search( esc_url( $url ), $this->sri_exclude ) ) {
             return $tag;
         }
-        $known_hashes = get_option(self::prefix.'known_hashes', array());
-        $sri_att = ' crossorigin="anonymous" integrity="sha256-' . $known_hashes[$url] . '"';
-        $insertion_pos = strpos($tag, '>');
+        $known_hashes = get_option( self::prefix . 'known_hashes', array() );
+        $sri_att = ' crossorigin="anonymous" integrity="sha256-' . $known_hashes[ $url ] . '"';
+        $insertion_pos = strpos( $tag, '>' );
         // account for self-closing tags
-        if (0 === strpos($tag, '<link ')) {
+        if ( 0 === strpos( $tag, '<link ' ) ) {
             $insertion_pos--; 
             $sri_att .= ' ';
         }
-        return substr($tag, 0, $insertion_pos) . $sri_att . substr($tag, $insertion_pos);
+        $output = substr( $tag, 0, $insertion_pos ) . $sri_att . substr( $tag, $insertion_pos );
+
+        // Add fallback if one is defined for this hash.
+//        $fallbacks = get_option( self::prefix . 'fallback_by_hashes', array() );
+//        if ( ! empty( $fallbacks[ $known_hashes[ $url ] ] ) ) {
+//            $output .= '<script>';
+//            $output .= esc_js( $fallbacks[ $known_hashes[ $url ] ] );
+//            $output .= " || document.write('<script src=\"{$this->cache_url}/" . sanitize_title_with_dashes( $known_hashes[ $url ] ) . "\"><\/script>')";
+//            $output .= '</script>';
+//        }
+        return $output;
     }
 
-    public function fetchResource ($rsrc_url) {
-        $url = (0 === strpos($rsrc_url, '//'))
-            ? ((is_ssl()) ? "https:$rsrc_url" : "http:$rsrc_url")
+    /**
+     * Fetches a resource.
+     *
+     * @param string $rsrc_url
+     *
+     * @uses wp_remote_get()
+     * @uses is_ssl()
+     *
+     * @return WP_Error|array
+     */
+    public function fetchResource ( $rsrc_url ) {
+        $url = ( 0 === strpos( $rsrc_url, '//' ) )
+            ? ( ( is_ssl() ) ? "https:$rsrc_url" : "http:$rsrc_url" )
             : $rsrc_url;
-        return wp_remote_get($url);
+        return wp_remote_get( $url );
     }
 
-    public function hashResource ($content) {
-        return base64_encode(hash('sha256', $content, true));
+    /**
+     * Creates a hash from a given resource's contents.
+     *
+     * @param string $content
+     *
+     * @return string
+     */
+    public function hashResource ( $content ) {
+        return base64_encode( hash( 'sha256', $content, true ) );
     }
 
-    public function filterTag ($tag, $handle, $src = null) {
-        $atts = wp_kses_hair($tag, array('', 'http', 'https'));
-        switch ($atts['type']['value']) {
+    /**
+     * Modifies HTML tags with SRI attributes.
+     *
+     * @link https://developer.wordpress.org/reference/hooks/style_loader_tag/
+     *
+     * @param string $tag
+     * @param string $handle
+     * @param string|NULL $src
+     *
+     * @return string
+     */
+    public function filterTag ( $tag, $handle, $src = null ) {
+        $atts = wp_kses_hair( $tag, array( '', 'http', 'https' ) );
+        switch ( $atts['type']['value'] ) {
             case 'text/css':
                 $url = $atts['href']['value'];
                 break;
@@ -162,58 +255,69 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         // Only do the thing if it makes sense to do so.
         // (It doesn't make sense for non-ssl pages or local resources on live sites,
         // but it always makes sense to do so in debug mode.)
-        if (!WP_DEBUG
+        if ( ! WP_DEBUG
             &&
-            (!is_ssl() || $this->isLocalResource($url))
-        ) { return $tag; }
+            ( ! is_ssl() || $this->isLocalResource( $url ) )
+        ) {
+            return $tag;
+        }
 
-        $known_hashes = get_option(self::prefix.'known_hashes', array());
-        if (empty($known_hashes[$url])) {
-            $resp = $this->fetchResource($url);
-            if (is_wp_error($resp)) {
+        $known_hashes = get_option( self::prefix . 'known_hashes', array() );
+        if ( empty( $known_hashes[ $url ] ) ) {
+            $resp = $this->fetchResource( $url );
+            if ( is_wp_error( $resp ) ) {
                 return $tag; // TODO: Handle this in some other way?
             } else {
-                $known_hashes[$url] = $this->hashResource($resp['body']);
-                update_option(self::prefix . 'known_hashes', $known_hashes);
+                $known_hashes[ $url ] = $this->hashResource( $resp['body'] );
+                update_option( self::prefix . 'known_hashes', $known_hashes );
+                if ( false === array_search( esc_url( $url ), $this->sri_exclude ) ) {
+                    file_put_contents( $this->cache_dir . '/' . sanitize_title_with_dashes( $known_hashes[ $url ] ), $resp['body'] );
+                }
             }
         }
 
-        return $this->addIntegrityAttribute($tag, $url);
+        return $this->addIntegrityAttribute( $tag, $url );
     }
 
     /**
      * Deletes a known hash from the database.
      *
      * @param string $url The URL of the URL/hash pair to remove.
+     *
      * @return bool True on success, false otherwise.
      */
-    public function deleteKnownHash ($url) {
-        $known_hashes = get_option(self::prefix . 'known_hashes', array());
-        unset($known_hashes[$url]);
-        update_option(self::prefix . 'known_hashes', $known_hashes);
+    public function deleteKnownHash ( $url ) {
+        $known_hashes = get_option( self::prefix . 'known_hashes', array() );
+
+        // Delete cached file if it exists.
+        if ( file_exists( $this->cache_dir . '/' . sanitize_title_with_dashes( $known_hashes[ $url ] ) ) ) {
+            unlink( $this->cache_dir . '/' . sanitize_title_with_dashes( $known_hashes[ $url ] ) );
+        }
+
+        unset( $known_hashes[ $url ] );
+        update_option( self::prefix . 'known_hashes', $known_hashes );
     }
 
     /**
      * Update our exclude option based on user action
      *
      * @param $url string The URL of of the asset to update
-     *
      * @param $exclude bool Are we excluding this $url from SRI?
      */
     public function updateExcludedUrl( $url, $exclude ) {
         if ( false === ( $k = array_search( esc_url( $url ), $this->sri_exclude ) ) && $exclude ) {
             array_push( $this->sri_exclude, esc_url( $url ) );
         } elseif( false !== $k && ! $exclude ) {
-            unset( $this->sri_exclude[$k] );
+            unset( $this->sri_exclude[ $k ] );
         }
-        update_option( self::prefix.'excluded_hashes', $this->sri_exclude );
+        update_option( self::prefix . 'excluded_hashes', $this->sri_exclude );
     }
 
     /**
      * Responds to administrator actions such as deleting hashes, etc.
      */
     public function processActions () {
-        if (isset($_POST['_' . self::prefix . 'nonce']) && wp_verify_nonce($_POST['_' . self::prefix . 'nonce'], 'bulk_update_sri_hashes')) {
+        if ( isset( $_POST[ '_' . self::prefix . 'nonce' ] ) && wp_verify_nonce( $_POST[ '_' . self::prefix . 'nonce' ], 'bulk_update_sri_hashes' ) ) {
             $wp_sri_hashes_table = new WP_SRI_Known_Hashes_List_Table();
             $action = $wp_sri_hashes_table->current_action();
             // So we can customize our admin update notice
@@ -237,33 +341,49 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
                 }
                 add_action( 'admin_notices', array( $this, 'excludeUrlUpdatedNotice' ) );
             }
+
+            // Process fallback settings.
+//            if ( isset( $_POST['fallback'] ) ) {
+//                foreach( $_POST['fallback'] as $url => $fallback ) {
+//                    $this->updateFallback( rawurldecode( $url ), $fallback );
+//                }
+//            }
         }
 
-        if (isset($_GET['_' . self::prefix . 'nonce']) && wp_verify_nonce($_GET['_' . self::prefix . 'nonce'], 'update_sri_hash')) {
+        if ( isset( $_GET[ '_' . self::prefix . 'nonce' ] ) && wp_verify_nonce( $_GET[ '_' . self::prefix . 'nonce' ], 'update_sri_hash' ) ) {
             $action = $_GET['action'];
             switch( $action ) {
                 case 'delete':
-                    $this->deleteKnownHash(rawurldecode($_GET['url']));
-                    add_action('admin_notices', array($this, 'hashDeletedNotice'));
+                    $this->deleteKnownHash( rawurldecode( $_GET['url'] ) );
+                    add_action('admin_notices', array( $this, 'hashDeletedNotice' ) );
                     break;
                 case 'include':
-                    $this->updateExcludedUrl(rawurldecode($_GET['url']), false );
-                    add_action('admin_notices', array($this, 'includeUrlUpdatedNotice'));
+                    $this->updateExcludedUrl( rawurldecode( $_GET['url'] ), false );
+                    add_action( 'admin_notices', array( $this, 'includeUrlUpdatedNotice' ) );
                     break;
                 case 'exclude':
-                    $this->updateExcludedUrl(rawurldecode($_GET['url']), true );
-                    add_action('admin_notices', array($this, 'excludeUrlUpdatedNotice'));
+                    $this->updateExcludedUrl( rawurldecode( $_GET['url'] ), true );
+                    add_action( 'admin_notices', array( $this, 'excludeUrlUpdatedNotice' ) );
                     break;
                 default:
                     break;
             }
-
         }
 
         // Make sure our scripts are added back in case they were removed.
         $this->sri_exclude_own();
     }
 
+//    public function updateFallback ( $url, $fallback ) {
+//        $known_hashes = get_option( self::prefix . 'known_hashes', array() );
+//        $fallbacks    = get_option( self::prefix . 'fallback_by_hashes', array() );
+//        $fallbacks[ $known_hashes[ $url ] ] = $fallback;
+//        update_option( self::prefix . 'fallback_by_hashes', $fallbacks );
+//    }
+
+    /**
+     * Render deleted hash admin notice.
+     */
     public function hashDeletedNotice () {
 ?>
 <div class="updated notice is-dismissible">
@@ -272,6 +392,9 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
 <?php
     }
 
+    /**
+     * Render excuded URL updated admin notice.
+     */
     public function excludeUrlUpdatedNotice() {
         ?>
         <div class="updated notice is-dismissible">
@@ -280,6 +403,9 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         <?php
     }
 
+    /**
+     * Render included URL updated admin notice.
+     */
     public function includeUrlUpdatedNotice() {
         ?>
         <div class="updated notice is-dismissible">
@@ -288,15 +414,20 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         <?php
     }
 
+    /**
+     * Registers admin menu.
+     *
+     * @link https://developer.wordpress.org/reference/hooks/admin_menu/
+     */
     public function registerAdminMenu () {
         $hook = add_management_page(
-            __('Subresource Integrity Manager', 'wp-sri'),
-            __('Subresource Integrity Manager', 'wp-sri'),
+            __( 'Subresource Integrity Manager', 'wp-sri' ),
+            __( 'Subresource Integrity Manager', 'wp-sri' ),
             'manage_options',
             self::prefix . 'admin',
-            array($this, 'renderToolPage')
+            array( $this, 'renderToolPage' )
         );
-        add_action("load-$hook", array($this, 'addAdminScreenOptions'));
+        add_action( "load-$hook", array( $this, 'addAdminScreenOptions' ) );
         add_action( 'admin_print_styles-' . $hook, array( $this, 'addAdminStyle' ) );
     }
 
