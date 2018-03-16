@@ -127,7 +127,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
             return $tag;
         }
         $known_hashes = get_option(self::prefix.'known_hashes', array());
-        $sri_att = ' crossorigin="anonymous" integrity="sha256-' . $known_hashes[$url] . '"';
+        $sri_att = ' crossorigin="anonymous" integrity="sha384-' . $known_hashes[$url] . '"';
         $insertion_pos = strpos($tag, '>');
         // account for self-closing tags
         if (0 === strpos($tag, '<link ')) {
@@ -145,7 +145,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
     }
 
     public function hashResource ($content) {
-        return base64_encode(hash('sha256', $content, true));
+        return base64_encode(hash('sha384', $content, true));
     }
 
     public function filterTag ($tag, $handle, $src = null) {
@@ -168,7 +168,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         ) { return $tag; }
 
         $known_hashes = get_option(self::prefix.'known_hashes', array());
-        if (empty($known_hashes[$url])) {
+        if ( (empty($known_hashes[$url])) || (strlen($known_hashes[$url]) == 44) ) {
             $resp = $this->fetchResource($url);
             if (is_wp_error($resp)) {
                 return $tag; // TODO: Handle this in some other way?
