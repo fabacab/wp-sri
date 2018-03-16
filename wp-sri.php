@@ -175,6 +175,8 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
             } else {
                 $known_hashes[$url] = $this->hashResource($resp['body']);
                 update_option(self::prefix . 'known_hashes', $known_hashes);
+                array_push( $this->sri_exclude, esc_url( $url ) );
+                update_option( self::prefix.'excluded_hashes', $this->sri_exclude );
             }
         }
 
