@@ -3,7 +3,7 @@
  * Plugin Name: Subresource Integrity (SRI) Manager
  * Plugin URI: https://maymay.net/blog/projects/wp-sri/
  * Description: A utility to easily add SRI security checks to your generated WordPress pages. <strong>Like this plugin? Please <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&amp;business=TJLPJYXHSRBEE&amp;lc=US&amp;item_name=WordPress%20Subresource%20Integrity%20Plugin&amp;item_number=wp-sri&amp;currency_code=USD&amp;bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted" title="Send a donation to the maintainer">donate</a>. &hearts; Thank you!</strong>
- * Version: 0.3.0
+ * Version: 0.4.0
  * Text Domain: wp-sri
  * Domain Path: /languages
  */
@@ -36,7 +36,7 @@ class WP_SRI_Plugin {
         add_action('current_screen', array($this, 'processActions'));
         add_action('admin_menu', array($this, 'registerAdminMenu'));
 
-        add_filter('style_loader_tag', array($this, 'filterTag'), 999999, 2);
+        add_filter('style_loader_tag', array($this, 'filterTag'), 999999, 3);
         add_filter('script_loader_tag', array($this, 'filterTag'), 999999, 3);
         add_filter('set-screen-option', array($this, 'setAdminScreenOptions'), 10, 3);
 
@@ -146,37 +146,39 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         return base64_encode(hash('sha256', $content, true));
     }
 
-    public function filterTag ($tag, $handle, $src = null) {
-        $atts = wp_kses_hair($tag, array('', 'http', 'https'));
-        switch ($atts['type']['value']) {
-            case 'text/css':
-                $url = $atts['href']['value'];
-                break;
-            case 'text/javascript':
-                $url = $src;
-                break;
-        }
-
+    /**
+     * Filters a given tag, possibly adding an `integrity` attribute.
+     *
+     * @see https://developer.wordpress.org/reference/hooks/style_loader_tag/
+     * @see https://developer.wordpress.org/reference/hooks/script_loader_tag/
+     *
+     * @param string $tag
+     * @param string $handle
+     * @param string $url
+     *
+     * @return string The original HTML tag or its augmented version.
+     */
+    public function filterTag ( $tag, $handle, $url ) {
         // Only do the thing if it makes sense to do so.
         // (It doesn't make sense for non-ssl pages or local resources on live sites,
         // but it always makes sense to do so in debug mode.)
-        if (!WP_DEBUG
+        if ( ! WP_DEBUG
             &&
-            (!is_ssl() || $this->isLocalResource($url))
+            ( ! is_ssl() || $this->isLocalResource( $url ) )
         ) { return $tag; }
 
-        $known_hashes = get_option(self::prefix.'known_hashes', array());
-        if (empty($known_hashes[$url])) {
-            $resp = $this->fetchResource($url);
-            if (is_wp_error($resp)) {
+        $known_hashes = get_option( self::prefix.'known_hashes', array() );
+        if ( empty( $known_hashes[ $url ] ) ) {
+            $resp = $this->fetchResource( $url );
+            if ( is_wp_error( $resp ) ) {
                 return $tag; // TODO: Handle this in some other way?
             } else {
-                $known_hashes[$url] = $this->hashResource($resp['body']);
-                update_option(self::prefix . 'known_hashes', $known_hashes);
+                $known_hashes[ $url ] = $this->hashResource( $resp['body'] );
+                update_option( self::prefix . 'known_hashes', $known_hashes );
             }
         }
 
-        return $this->addIntegrityAttribute($tag, $url);
+        return $this->addIntegrityAttribute( $tag, $url );
     }
 
     /**
