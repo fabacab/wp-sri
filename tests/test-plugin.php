@@ -4,18 +4,19 @@
  *
  * @package plugin
  */
-class WP_SRI_Plugin_Test extends WP_UnitTestCase {
+class PluginTest extends WP_UnitTestCase {
 
     protected $plugin;
     protected $excluded;
 
-    public function setUp () {
+    public function setUp (): void
+    {
         parent::setUp();
         $this->plugin = new WP_SRI_Plugin();
-        $this->excluded = get_option( WP_SRI_Plugin::prefix . 'excluded_hashes', array() );
+        $this->excluded = get_option( WP_SRI_Plugin::$prefix . 'excluded_hashes', array() );
     }
 
-    public function test_localResourceIsSucessfullyDetected () {
+    public function testLocalResourceIsSuccessfullyDetected () {
         $url = trailingslashit(get_site_url()) . '/example.js';
         $this->assertTrue( $this->plugin->isLocalResource($url) );
     }
@@ -43,6 +44,7 @@ class WP_SRI_Plugin_Test extends WP_UnitTestCase {
 
     public function test_filterLinkTag () {
         // TODO: write a test with mock HTTP responses?
+        $this->markTestSkipped();
     }
 
     public function testUpdateExcludedUrl() {
@@ -51,7 +53,7 @@ class WP_SRI_Plugin_Test extends WP_UnitTestCase {
         $this->assertCount( 2, $this->excluded );
         $this->assertFalse( array_search( esc_url( $url ), $this->excluded ) );
         $this->plugin->updateExcludedUrl( $url, true );
-        $this->excluded = get_option( WP_SRI_Plugin::prefix.'excluded_hashes', array() );
+        $this->excluded = get_option( WP_SRI_Plugin::$prefix.'excluded_hashes', array() );
         $this->assertTrue( false !== array_search( esc_url( $url ), $this->excluded ) );
     }
 
@@ -68,7 +70,7 @@ class WP_SRI_Plugin_Test extends WP_UnitTestCase {
         $this->plugin->processActions();
 
         // Grab our updated exclude array
-        $this->excluded = get_option( WP_SRI_Plugin::prefix.'excluded_hashes', array() );
+        $this->excluded = get_option( WP_SRI_Plugin::$prefix.'excluded_hashes', array() );
 
         // The plugin added our script and stylesheet so this should the 3rd
         $this->assertCount( 3, $this->excluded );
@@ -81,7 +83,7 @@ class WP_SRI_Plugin_Test extends WP_UnitTestCase {
         $this->plugin->processActions();
 
         // Grab our updated exclude array
-        $this->excluded = get_option( WP_SRI_Plugin::prefix.'excluded_hashes', array() );
+        $this->excluded = get_option( WP_SRI_Plugin::$prefix.'excluded_hashes', array() );
 
         // Our array count should be one fewer now.
         $this->assertCount( 2, $this->excluded );
