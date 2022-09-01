@@ -2,3 +2,4 @@
 vendor/
 .phpcs*
 .phpunit*
+*.min.*

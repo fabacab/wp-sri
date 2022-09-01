@@ -1,42 +1,34 @@
 /**
- * Created by mark on 4/12/16.
+ * Updates the SRI exclude list using AJAX.
+ * @since 0.5.0
+ * @author Brennan Goewert <brennan@goewert.me>
  */
-jQuery(function ($) {
+document.querySelectorAll('.sri-exclude').forEach(cb => {
+    cb.addEventListener( 'change', e => {
 
-    var checkboxes = $('.sri-exclude'),
-        checkbox,
-        boxId,
-        data,
-        loading,
-        nonce = options.security;
-
-    // Progressive enhancement
-    checkboxes.prop('disabled', false ).css('pointer-events', 'auto' );
-
-    checkboxes.on('change', function (e) {
-        loading = $(e.target).next('span');
-        loading.show();
-
-        checkbox = $(e.target);
-        boxId = checkbox.attr('id');
-
-        // console.log(checkbox.is(':checked'));
-        // console.log(boxId);
-        checked = checkbox.is(':checked') ? true : false;
-
-        data = {
+        let data = new URLSearchParams({
             action: 'update_sri_exclude',
-            url: boxId,
-            checked: checked,
-            security: nonce
-        };
-        jQuery.post(ajaxurl, data, function( resp ) {
-
-            // console.log( resp.data );
-            loading.hide();
+            url: e.target.getAttribute( 'value' ),
+            checked: cb.checked,
+            security: sriOptions.security
         });
 
+        fetch(ajaxurl, { method: 'POST', body: data })
+            .then(() => {
+                let nodeCheckboxNotice = document.createElement('span');
+                nodeCheckboxNotice.style.display = 'block';
+                nodeCheckboxNotice.innerText = cb.checked ? 'Added' : 'Removed';
+            
+                e.target.after(nodeCheckboxNotice);
+                setTimeout(() => nodeCheckboxNotice.remove(), 300);
+            })
+            .catch(reason => {
+                let nodeExcludeFailed = document.createElement('span');
+                nodeExcludeFailed.style.display = 'block';
+                nodeExcludeFailed.innerText = 'Failed to exclude.';
 
+                e.target.after(nodeExcludeFailed);
+                setTimeout(() => nodeExcludeFailed.remove(), 300);
+            });
     });
-
 });

@@ -65,7 +65,7 @@ class WP_SRI_Plugin {
         add_filter('script_loader_tag', array($this, 'filterTag'), 999999, 3);
         add_filter('set-screen-option', array($this, 'setAdminScreenOptions'), 10, 3);
 
-        add_action( 'admin_enqueue_scripts', array( $this, 'sri_enqueue_scripts' ) );
+        add_action( 'admin_enqueue_scripts', array( $this, 'sri_admin_enqueue_scripts' ) );
 
         add_action( 'wp_ajax_update_sri_exclude', array( 'WP_SRI_Known_Hashes_List_Table', 'update_sri_exclude' ) );
 
@@ -100,10 +100,10 @@ class WP_SRI_Plugin {
     /**
      * Enqueue and localize our JS
      */
-    public function sri_enqueue_scripts() {
+    public function sri_admin_enqueue_scripts() {
         wp_enqueue_script( 'sri-exclude-js', plugin_dir_url( __FILE__ ) . 'js/wp-sri.js', array( 'jquery' ), $this->version, true );
         $nonce = wp_create_nonce( 'sri-update-exclusion' );
-        wp_localize_script( 'sri-exclude-js', 'options', array( 'security' => $nonce ) );
+        wp_localize_script( 'sri-exclude-js', 'sriOptions', array( 'security' => $nonce ) );
     }
 
     public function registerL10n () {

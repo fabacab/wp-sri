@@ -117,7 +117,6 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
      * Create our output for the Excluded column.
      *
      * If the row's $url is in our excluded array, make sure box is checked.
-     * We include a loading image which is hidden using CSS by default.
      * Checkboxes are disabled by default, enabled using JS if available.
      * 
      * @param $item
@@ -125,15 +124,16 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
      * @return string
      */
     protected function column_exclude( $item ) {
+        
         $url  = esc_url( $item['url'] );
-        $hash = $item['hash'];
+
         if ( false !== array_search( $url, $this->sri_exclude) ) {
             $checked = 'checked="checked"';
         } else {
             $checked = '';
         }
-        $loading = plugin_dir_url( __FILE__ ) . 'css/working.gif'; // image shown during AJAX request to indicate something is happening.
-       return sprintf('<input disabled="disabled" type="checkbox" class="sri-exclude" id="%s" %s><span class="sri-loading"><img src="%s" /> </span>', $url, $checked, $loading );
+        
+        return sprintf('<input type="checkbox" class="sri-exclude" name=url[] value="%s" %s>', $url, $checked );
     }
 
     protected function column_url ($item) {
