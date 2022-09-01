@@ -197,9 +197,9 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
     /**
      * Update our exclude option based on user action
      *
-     * @param $url string The URL of of the asset to update
+     * @param string $url The URL of of the asset to update
      *
-     * @param $exclude bool Are we excluding this $url from SRI?
+     * @param bool $exclude Are we excluding this $url from SRI?
      */
     public function updateExcludedUrl( $url, $exclude ) {
         if ( false === ( $k = array_search( esc_url( $url ), $this->sri_exclude ) ) && $exclude ) {
