@@ -2,7 +2,6 @@
 Contributors: maymay
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=TJLPJYXHSRBEE&lc=US&item_name=WordPress%20Subresource%20Integrity%20Plugin&item_number=wp-sri&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted
 Tags: security, subresource integrity, SRI, MITM, mitigation, DDoS prevention
-Requires at least: 4.1
 Tested up to: 5.6
 Stable tag: trunk
 License: GPL-3.0
