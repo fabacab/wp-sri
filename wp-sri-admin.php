@@ -26,7 +26,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
      */
     public function __construct () {
 
-        $this->sri_exclude = get_option(WP_SRI_Plugin::prefix.'excluded_hashes', array()); // Get our excluded option array
+        $this->sri_exclude = get_option(WP_SRI_Plugin::$prefix.'excluded_hashes', array()); // Get our excluded option array
 
         parent::__construct(array(
             'singular' => esc_html__('Known Hash', 'wp-sri'),
@@ -85,7 +85,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
     public function prepare_items () {
         $this->_column_headers = $this->get_column_info();
 
-        $known_hashes = get_option(WP_SRI_Plugin::prefix.'known_hashes', array());
+        $known_hashes = get_option(WP_SRI_Plugin::$prefix.'known_hashes', array());
         if (!empty($_POST['s'])) {
             $known_hashes = array_flip(array_filter(array_flip($known_hashes), array($this, 'search')));
         }
@@ -198,7 +198,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 
         $update = false;
 
-        $excluded = get_option(WP_SRI_Plugin::prefix.'excluded_hashes', array());
+        $excluded = get_option(WP_SRI_Plugin::$prefix.'excluded_hashes', array());
         $url = esc_url( $_POST['url'] );
         $checked = filter_var( $_POST['checked'], FILTER_VALIDATE_BOOLEAN );
 
@@ -217,7 +217,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
         }
 
         if ( $update ) {
-            update_option( WP_SRI_Plugin::prefix.'excluded_hashes', $excluded );
+            update_option( WP_SRI_Plugin::$prefix.'excluded_hashes', $excluded );
         }
 
         wp_send_json_success( 'done' );

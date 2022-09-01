@@ -23,15 +23,39 @@ class WP_SRI_Plugin {
      *
      * @var string
      */
-    const prefix = 'wp_sri_';
+    public static $prefix;
 
-    private $sri_exclude; // Options array of excluded asset URLs
-    private $count = 1; // Used for admin update notice
-    private $version = "0.3.0";
+    /**
+     * Options array of excluded asset URLs
+     * @var array
+     */
+    private $sri_exclude;
+
+
+    /**
+     * Used for admin update notice.
+     * @var int
+     */
+    private $count = 1;
+
+    /**
+     * Plugin version
+     * @var string
+     */
+    private $version;
 
     public function __construct () {
+
+        // Get plugin metadata
+        if( ! function_exists('get_plugin_data') ){
+            require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+        }
+        $plugin = get_plugin_data( __FILE__, false, false );
+        $this->version = $plugin['Version'];
+        self::$prefix = str_replace( '-', '_', $plugin['TextDomain'] ) . '_';
+
         // Grab our exclusion array from the options table.
-        $this->sri_exclude = get_option( self::prefix.'excluded_hashes', array() );
+        $this->sri_exclude = get_option( self::$prefix.'excluded_hashes', array() );
 
         add_action('plugins_loaded', array($this, 'registerL10n'));
         add_action('current_screen', array($this, 'processActions'));
@@ -68,7 +92,7 @@ class WP_SRI_Plugin {
             $script = esc_url( $script );
             if ( false === array_search( $script, $this->sri_exclude ) ) {
                 $this->sri_exclude[] = $script;
-                update_option( self::prefix.'excluded_hashes', $this->sri_exclude );
+                update_option( self::$prefix.'excluded_hashes', $this->sri_exclude );
             }
         }
     }
@@ -102,7 +126,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
     /**
      * Checks a URL to determine whether or not the resource is "remote"
      * (served by a third-party) or whether the resource is local (and
-     * is being served by the same webserver as this plugin is run on.)
+     * is being served by the same web server as this plugin is run on.)
      *
      * @param string $uri The URI of the resource to inspect.
      * @return bool True if the resource is local, false if the resource is remote.
@@ -125,7 +149,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         if ( false !== array_search( esc_url( $url ), $this->sri_exclude) ) {
             return $tag;
         }
-        $known_hashes = get_option(self::prefix.'known_hashes', array());
+        $known_hashes = get_option(self::$prefix.'known_hashes', array());
         $sri_att = ' crossorigin="anonymous" integrity="sha256-' . $known_hashes[$url] . '"';
         $insertion_pos = strpos($tag, '>');
         // account for self-closing tags
@@ -168,14 +192,14 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
             ( ! is_ssl() || $this->isLocalResource( $url ) )
         ) { return $tag; }
 
-        $known_hashes = get_option( self::prefix.'known_hashes', array() );
+        $known_hashes = get_option( self::$prefix.'known_hashes', array() );
         if ( empty( $known_hashes[ $url ] ) ) {
             $resp = $this->fetchResource( $url );
             if ( is_wp_error( $resp ) ) {
                 return $tag; // TODO: Handle this in some other way?
             } else {
                 $known_hashes[ $url ] = $this->hashResource( $resp['body'] );
-                update_option( self::prefix . 'known_hashes', $known_hashes );
+                update_option( self::$prefix . 'known_hashes', $known_hashes );
             }
         }
 
@@ -189,9 +213,9 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
      * @return bool True on success, false otherwise.
      */
     public function deleteKnownHash ($url) {
-        $known_hashes = get_option(self::prefix . 'known_hashes', array());
+        $known_hashes = get_option(self::$prefix . 'known_hashes', array());
         unset($known_hashes[$url]);
-        update_option(self::prefix . 'known_hashes', $known_hashes);
+        return update_option(self::$prefix . 'known_hashes', $known_hashes);
     }
 
     /**
@@ -207,14 +231,14 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         } elseif( false !== $k && ! $exclude ) {
             unset( $this->sri_exclude[$k] );
         }
-        update_option( self::prefix.'excluded_hashes', $this->sri_exclude );
+        update_option( self::$prefix.'excluded_hashes', $this->sri_exclude );
     }
 
     /**
      * Responds to administrator actions such as deleting hashes, etc.
      */
     public function processActions () {
-        if (isset($_POST['_' . self::prefix . 'nonce']) && wp_verify_nonce($_POST['_' . self::prefix . 'nonce'], 'bulk_update_sri_hashes')) {
+        if (isset($_POST['_' . self::$prefix . 'nonce']) && wp_verify_nonce($_POST['_' . self::$prefix . 'nonce'], 'bulk_update_sri_hashes')) {
             $wp_sri_hashes_table = new WP_SRI_Known_Hashes_List_Table();
             $action = $wp_sri_hashes_table->current_action();
             // So we can customize our admin update notice
@@ -240,7 +264,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
             }
         }
 
-        if (isset($_GET['_' . self::prefix . 'nonce']) && wp_verify_nonce($_GET['_' . self::prefix . 'nonce'], 'update_sri_hash')) {
+        if (isset($_GET['_' . self::$prefix . 'nonce']) && wp_verify_nonce($_GET['_' . self::$prefix . 'nonce'], 'update_sri_hash')) {
             $action = $_GET['action'];
             switch( $action ) {
                 case 'delete':
@@ -294,7 +318,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
             __('Subresource Integrity Manager', 'wp-sri'),
             __('Subresource Integrity Manager', 'wp-sri'),
             'manage_options',
-            self::prefix . 'admin',
+            self::$prefix . 'admin',
             array($this, 'renderToolPage')
         );
         add_action("load-$hook", array($this, 'addAdminScreenOptions'));
@@ -308,7 +332,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         add_screen_option('per_page', array(
             'label' => esc_html__('Hashes', 'wp-sri'),
             'default' => 20,
-            'option' => self::prefix . 'hashes_per_page'
+            'option' => self::$prefix . 'hashes_per_page'
         ));
 
         $screen = get_current_screen();
@@ -329,7 +353,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         $content .= '</ul>';
         $content .= '<p>' . sprintf(esc_html__('Learn more about %sSubresource Integrity%s features.', 'wp-sri'), '<a href="https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity">', '</a>') . '</p>';
         $screen->add_help_tab( array(
-            'id' => self::prefix.'help_tab',
+            'id' => self::$prefix.'help_tab',
             'title' => 'Managing Subresource Integrity',
             'content' => $content
         ));
@@ -340,7 +364,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
     }
 
     public function setAdminScreenOptions ($status, $option, $value) {
-        if (self::prefix . 'hashes_per_page' === $option) {
+        if (self::$prefix . 'hashes_per_page' === $option) {
             return $value;
         }
         return $status;
@@ -355,10 +379,10 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
 ?>
 <div class="wrap">
 <h2><?php esc_html_e('Subresource Integrity Manager', 'wp-sri');?></h2>
-<form action="<?php print admin_url('tools.php?page=' . self::prefix . 'admin');?>" method="post">
+<form action="<?php print admin_url('tools.php?page=' . self::$prefix . 'admin');?>" method="post">
 <?php
-        wp_nonce_field('bulk_update_sri_hashes', '_' . self::prefix . 'nonce');
-        $wp_sri_hashes_table->search_box(esc_html__('Search', 'wp-sri'), self::prefix . 'search_hashes');
+        wp_nonce_field('bulk_update_sri_hashes', '_' . self::$prefix . 'nonce');
+        $wp_sri_hashes_table->search_box(esc_html__('Search', 'wp-sri'), self::$prefix . 'search_hashes');
         $wp_sri_hashes_table->display();
 ?>
 </form>
