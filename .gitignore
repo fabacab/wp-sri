@@ -1,0 +1,4 @@
+*.lock
+vendor/
+.phpcs*
+.phpunit*
