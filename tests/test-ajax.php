@@ -3,7 +3,6 @@
  * Test cases for the WP-SRI plugin AJAX functions
  *
  * @group ajax
- * @runTestsInSeparateProcesses
  */
 class AjaxTest extends WP_Ajax_UnitTestCase {
 
