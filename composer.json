@@ -1,8 +1,6 @@
 {
     "scripts": {
-        "install-wp-tests": [
-            "./bin/install-wp-tests.sh wordpress_test root '' localhost"
-        ],
+        "install-wp-tests": "./bin/install-wp-tests.sh wordpress_test root '' localhost",
         "test": "./vendor/bin/phpunit --testdox",
         "test-ajax": "./vendor/bin/phpunit --testdox --group ajax"
     },
