@@ -65,7 +65,11 @@ jobs:
 
       - name: Install PHPUnit
         run: >
-          composer global require phpunit/phpunit ^9
+          if [ $(echo "${{ matrix.wordpress }}>=5.9" | bc -l) = 1 ] && [ $(echo "${{ matrix.php }}>=7.4" | bc -l) = 1 ]; then
+            composer global require phpunit/phpunit ^9;
+          elif [ $(echo "${{ matrix.wordpress }}>=5.6" | bc -l) = 1 ] && [ $(echo "${{ matrix.wordpress }}<=5.8" | bc -l) = 1 ] && [ $(echo "${{ matrix.php }}>=7.4" | bc -l) = 1 ]; then
+            composer global require phpunit/phpunit ^7;
+          fi
           && composer global require yoast/phpunit-polyfills
       
       - name: Install PHP_CodeSniffer
