@@ -62,6 +62,11 @@ jobs:
 
       - name: Install dependencies
         run: composer install --no-progress --no-suggest --prefer-dist --optimize-autoloader
+
+      - name: Install PHPUnit
+        run: >
+          composer global require phpunit/phpunit ^9
+          && composer global require yoast/phpunit-polyfills
       
       - name: Install PHP_CodeSniffer
         run: >
