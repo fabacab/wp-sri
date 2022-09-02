@@ -74,11 +74,8 @@ jobs:
       - name: Setup problem matchers for PHPUnit
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
-      - name: Run tests
-        run: composer run test
-      
-      - name: Run tests (AJAX)
-        run: composer run test-ajax
+      - name: Run PHPUnit
+        run: phpunit
       
       - name: Run PHP_CodeSniffer
         run: phpcs
