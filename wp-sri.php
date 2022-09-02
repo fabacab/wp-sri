@@ -9,7 +9,7 @@
  * Domain Path: /languages
  */
 
-if (!defined('ABSPATH')) { exit; } // Disallow direct HTTP access.
+if (!defined('ABSPATH')) exit; // Disallow direct HTTP access.
 
 require_once dirname(__FILE__) . '/wp-sri-admin.php';
 
