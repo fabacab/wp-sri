@@ -87,4 +87,4 @@ jobs:
         run: phpunit --verbose
       
       - name: Run PHP_CodeSniffer
-        run: phpcs .
+        run: phpcs
