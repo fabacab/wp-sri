@@ -26,13 +26,13 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
      */
     public function __construct () {
 
-        $this->sri_exclude = get_option(WP_SRI_Plugin::$prefix.'excluded_hashes', array()); // Get our excluded option array
+        $this->sri_exclude = get_option(WP_SRI_Plugin::$prefix . 'excluded_hashes', array()); // Get our excluded option array
 
         parent::__construct(array(
-            'singular' => esc_html__('Known Hash', 'wp-sri'),
-            'plural' => esc_html__('Known Hashes', 'wp-sri'),
-            'ajax' => false,
-            'screen' => get_current_screen(), // https://wordpress.org/support/topic/php-notice-because-constructor-for-class-wp_list_table?replies=1
+            'singular'  => esc_html__('Known Hash', 'wp-sri'),
+            'plural'    => esc_html__('Known Hashes', 'wp-sri'),
+            'ajax'      => false,
+            'screen'    => get_current_screen(), // https://wordpress.org/support/topic/php-notice-because-constructor-for-class-wp_list_table?replies=1
         ));
     }
 
@@ -42,26 +42,26 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 
     public function get_columns () {
         return array(
-            'cb' => '<input type="checkbox" />',
-            'url' => esc_html__('URL', 'wp-sri'),
-            'hash' => esc_html__('Hash', 'wp-sri'),
-            'exclude' => esc_html__( 'Exclude', 'wp-sri' ),
+            'cb'        => '<input type="checkbox" />',
+            'url'       => esc_html__('URL', 'wp-sri'),
+            'hash'      => esc_html__('Hash', 'wp-sri'),
+            'exclude'   => esc_html__( 'Exclude', 'wp-sri' ),
         );
     }
 
     public function get_sortable_columns () {
         return array(
-            'url' => array('url', false),
-            'hash' => array('hash', false),
-            'exclude' => array( 'exclude', true )
+            'url'       => array('url', false),
+            'hash'      => array('hash', false),
+            'exclude'   => array( 'exclude', true )
         );
     }
 
     public function get_bulk_actions () {
         return array(
-            'delete' => esc_html__('Delete', 'wp-sri'),
-            'exclude' => esc_html__( 'Exclude', 'wp-sri' ),
-            'include' => esc_html__( 'Include', 'wp-wri' )
+            'delete'    => esc_html__('Delete', 'wp-sri'),
+            'exclude'   => esc_html__( 'Exclude', 'wp-sri' ),
+            'include'   => esc_html__( 'Include', 'wp-wri' )
         );
     }
 
@@ -85,7 +85,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
     public function prepare_items () {
         $this->_column_headers = $this->get_column_info();
 
-        $known_hashes = get_option(WP_SRI_Plugin::$prefix.'known_hashes', array());
+        $known_hashes = get_option(WP_SRI_Plugin::$prefix . 'known_hashes', array());
         if (!empty($_POST['s'])) {
             $known_hashes = array_flip(array_filter(array_flip($known_hashes), array($this, 'search')));
         }
@@ -93,18 +93,18 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
         $show_on_page = $this->get_items_per_page('wp_sri_hashes_per_page', 20);
 
         $this->set_pagination_args(array(
-            'total_items' => $total_hashes,
-            'total_pages' => ceil($total_hashes / $show_on_page),
-            'per_page' => $show_on_page
+            'total_items'   => $total_hashes,
+            'total_pages'   => ceil($total_hashes / $show_on_page),
+            'per_page'      => $show_on_page
         ));
 
         $items = array();
         foreach ($known_hashes as $url => $hash) {
             $exclude = ( false !== array_search( $url, $this->sri_exclude ) ) ? 'a' : 'b';
             $items[] = array(
-                'url' => $url,
-                'hash' => $hash,
-                'exclude' => $exclude
+                'url'       => $url,
+                'hash'      => $hash,
+                'exclude'   => $exclude
             );
         }
 
@@ -118,13 +118,13 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
      *
      * If the row's $url is in our excluded array, make sure box is checked.
      * Checkboxes are disabled by default, enabled using JS if available.
-     * 
+     *
      * @param $item
      *
      * @return string
      */
     protected function column_exclude( $item ) {
-        
+
         $url  = esc_url( $item['url'] );
 
         if ( false !== array_search( $url, $this->sri_exclude) ) {
@@ -132,7 +132,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
         } else {
             $checked = '';
         }
-        
+
         return sprintf('<input type="checkbox" class="sri-exclude" name=url[] value="%s" %s>', $url, $checked );
     }
 
@@ -154,7 +154,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
      * Add proper output to $actions array depending on whether or not $item['url'] is being excluded.
      *
      * @param $item  array    Table row data
-     * @param $actions  array ref  We're adding our action directoy to the array used in the above column_url() func
+     * @param $actions  array ref  We're adding our action directory to the array used in the above column_url() func
      */
     protected function get_exclude_actions( $item, &$actions ) {
 
@@ -198,7 +198,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 
         $update = false;
 
-        $excluded = get_option(WP_SRI_Plugin::$prefix.'excluded_hashes', array());
+        $excluded = get_option(WP_SRI_Plugin::$prefix . 'excluded_hashes', array());
         $url = esc_url( $_POST['url'] );
         $checked = filter_var( $_POST['checked'], FILTER_VALIDATE_BOOLEAN );
 
@@ -206,18 +206,19 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
             // If checked, we add $url to our exclusion array.
             if ( ! in_array( $url, $excluded ) ) {
                 $excluded[] = $url;
-                $update = true;
+                $update     = true;
             }
         } else {
             // If unchecked, we remove $url from our exclusion array.
-            if ( false !== ($key = array_search( $url, $excluded)) ) {
-                unset( $excluded[$key] );
+            $key = array_search( $url, $excluded, true );
+            if ( $key !== false ) {
+                unset( $excluded[ $key ] );
                 $update = true;
             }
         }
 
         if ( $update ) {
-            update_option( WP_SRI_Plugin::$prefix.'excluded_hashes', $excluded );
+            update_option( WP_SRI_Plugin::$prefix . 'excluded_hashes', $excluded );
         }
 
         wp_send_json_success( 'done' );

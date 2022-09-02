@@ -4,36 +4,43 @@
  *
  * @package plugin
  */
+
 class PluginTest extends WP_UnitTestCase {
 
+	/**
+	 * @var WP_SRI_Plugin
+	 */
     protected $plugin;
+
+	/**
+	 * @var array
+	 */
     protected $excluded;
 
-    public function setUp (): void
-    {
+    public function setUp() {
         parent::setUp();
         $this->plugin = new WP_SRI_Plugin();
         $this->excluded = get_option( WP_SRI_Plugin::$prefix . 'excluded_hashes', array() );
     }
 
-    public function testLocalResourceIsSuccessfullyDetected () {
+    public function testLocalResourceIsSuccessfullyDetected() {
         $url = trailingslashit(get_site_url()) . '/example.js';
         $this->assertTrue( $this->plugin->isLocalResource($url) );
     }
 
-    public function test_remoteResourceIsSuccessfullyDetected () {
+    public function test_remoteResourceIsSuccessfullyDetected() {
         $url = 'https://cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js';
         $this->assertFalse( $this->plugin->isLocalResource($url) );
     }
 
-    public function test_hashResource () {
+    public function test_hashResource() {
         $content = 'alert("Hello, world!");';
         $expected_hash = 'niqXkYYIkmWt0jYVFjVzcI+Q5nc3jzIdmbLXJqKD5A8=';
         $encoded_hash = $this->plugin->hashResource($content);
         $this->assertEquals( $expected_hash, $encoded_hash );
     }
 
-    public function test_deleteKnownHash () {
+    public function test_deleteKnownHash() {
         update_option('wp_sri_known_hashes', array(
             '//cdn.datatables.net/1.10.6/js/jquery.dataTables.min.js' => 'JOLmOuOEVbUWcM57vmy0F48W/2S7UCJB3USm7/Tu10U='
         ));
@@ -42,7 +49,7 @@ class PluginTest extends WP_UnitTestCase {
         $this->assertEquals($remaining_known_hashes, get_option('wp_sri_known_hashes'));
     }
 
-    public function test_filterLinkTag () {
+    public function test_filterLinkTag() {
         // TODO: write a test with mock HTTP responses?
         $this->markTestSkipped();
     }
@@ -63,9 +70,9 @@ class PluginTest extends WP_UnitTestCase {
         $this->assertFalse( array_search( esc_url( $url ), $this->excluded ) );
 
         // Set up our $_GET vars
-        $_GET['_wp_sri_nonce'] = wp_create_nonce( 'update_sri_hash' );
-        $_GET['url']           = rawurlencode( $url );
-        $_GET['action']        = 'exclude';
+        $_GET['_wp_sri_nonce']  = wp_create_nonce( 'update_sri_hash' );
+        $_GET['url']            = rawurlencode( $url );
+        $_GET['action']         = 'exclude';
 
         $this->plugin->processActions();
 
@@ -76,9 +83,9 @@ class PluginTest extends WP_UnitTestCase {
         $this->assertCount( 3, $this->excluded );
         $this->assertEquals( 2, array_search( rawurldecode( $url ), $this->excluded ) );
 
-        $_GET['_wp_sri_nonce'] = wp_create_nonce( 'update_sri_hash' );
-        $_GET['url']           = rawurlencode( $url );
-        $_GET['action']        = 'include';
+        $_GET['_wp_sri_nonce']  = wp_create_nonce( 'update_sri_hash' );
+        $_GET['url']            = rawurlencode( $url );
+        $_GET['action']         = 'include';
 
         $this->plugin->processActions();
 

@@ -92,7 +92,7 @@ class WP_SRI_Plugin {
             $script = esc_url( $script );
             if ( false === array_search( $script, $this->sri_exclude ) ) {
                 $this->sri_exclude[] = $script;
-                update_option( self::$prefix.'excluded_hashes', $this->sri_exclude );
+                update_option( self::$prefix . 'excluded_hashes', $this->sri_exclude );
             }
         }
     }
@@ -154,7 +154,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         $insertion_pos = strpos($tag, '>');
         // account for self-closing tags
         if (0 === strpos($tag, '<link ')) {
-            $insertion_pos--; 
+            $insertion_pos--;
             $sri_att .= ' ';
         }
         return substr($tag, 0, $insertion_pos) . $sri_att . substr($tag, $insertion_pos);
@@ -192,7 +192,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
             ( ! is_ssl() || $this->isLocalResource( $url ) )
         ) { return $tag; }
 
-        $known_hashes = get_option( self::$prefix.'known_hashes', array() );
+        $known_hashes = get_option( self::$prefix . 'known_hashes', array() );
         if ( empty( $known_hashes[ $url ] ) ) {
             $resp = $this->fetchResource( $url );
             if ( is_wp_error( $resp ) ) {
@@ -231,7 +231,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         } elseif( false !== $k && ! $exclude ) {
             unset( $this->sri_exclude[$k] );
         }
-        update_option( self::$prefix.'excluded_hashes', $this->sri_exclude );
+        update_option( self::$prefix . 'excluded_hashes', $this->sri_exclude );
     }
 
     /**
