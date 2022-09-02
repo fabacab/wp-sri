@@ -32,7 +32,7 @@ class AjaxTest extends WP_Ajax_UnitTestCase {
 			$this->_handleAjax( 'update_sri_exclude' );
 		} catch( WPAjaxDieContinueException $e ) {
 			$response = json_decode( $this->_last_response );
-			$this->assertInternalType( 'object', $response );
+			$this->assertIsObject( $response );
 			$this->assertObjectHasAttribute( 'success', $response );
 			$this->assertTrue( $response->success );
 			$this->assertObjectHasAttribute( 'data', $response );
@@ -65,7 +65,7 @@ class AjaxTest extends WP_Ajax_UnitTestCase {
 			$this->_handleAjax( 'update_sri_exclude' );
 		} catch( WPAjaxDieContinueException $e ) {
 			$response = json_decode( $this->_last_response );
-			$this->assertInternalType( 'object', $response );
+			$this->assertIsObject( $response );
 			$this->assertObjectHasAttribute( 'success', $response );
 			$this->assertTrue( $response->success );
 			$this->assertObjectHasAttribute( 'data', $response );
