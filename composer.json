@@ -1,12 +1,7 @@
 {
     "scripts": {
         "install-wp-tests": [
-            "./bin/install-wp-tests.sh wordpress_test root '' localhost",
-            "mkdir ./tests/phpunit",
-            "mkdir ./tests/phpunit/tests",
-            "cd ./tests/phpunit",
-            "svn co https://develop.svn.wordpress.org/trunk/tests/phpunit/includes/",
-            "cd"
+            "./bin/install-wp-tests.sh wordpress_test root '' localhost"
         ],
         "test": "./vendor/bin/phpunit --testdox",
         "test-ajax": "./vendor/bin/phpunit --testdox --group ajax"
