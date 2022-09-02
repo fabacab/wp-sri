@@ -80,7 +80,7 @@ jobs:
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
       - name: Run PHPUnit
-        run: phpunit
+        run: phpunit --verbose
       
       - name: Run PHP_CodeSniffer
         run: phpcs
