@@ -15,16 +15,16 @@ document.querySelectorAll('.sri-exclude').forEach(cb => {
 
         fetch(ajaxurl, { method: 'POST', body: data })
             .then(() => {
-                let nodeCheckboxNotice = document.createElement('span');
-                nodeCheckboxNotice.style.display = 'block';
+                let nodeCheckboxNotice = document.createElement('p');
+                nodeCheckboxNotice.style.margin = '0';
                 nodeCheckboxNotice.innerText = cb.checked ? 'Added' : 'Removed';
             
                 e.target.after(nodeCheckboxNotice);
                 setTimeout(() => nodeCheckboxNotice.remove(), 300);
             })
             .catch(reason => {
-                let nodeExcludeFailed = document.createElement('span');
-                nodeExcludeFailed.style.display = 'block';
+                let nodeExcludeFailed = document.createElement('p');
+                nodeExcludeFailed.style.margin = '0';
                 nodeExcludeFailed.innerText = 'Failed to exclude.';
 
                 e.target.after(nodeExcludeFailed);
