@@ -10,9 +10,9 @@ class AjaxTest extends WP_Ajax_UnitTestCase {
 	public $excluded;
 	public $url;
 
-	public function set_up()
-	{
-		parent::set_up();
+	// phpcs:ignore
+	public function setUp() : void {
+		parent::setUp();
 
 		$this->excluded 	= get_option( WP_SRI_Plugin::$prefix.'excluded_hashes', array() );
 		$this->url 			= esc_url( 'http://plugins.dev/wp-content/themes/digital-pro/js/my-ajax.js' );

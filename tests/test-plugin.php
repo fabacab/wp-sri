@@ -17,7 +17,8 @@ class PluginTest extends WP_UnitTestCase {
 	 */
     protected $excluded;
 
-    public function setUp() {
+    // phpcs:ignore
+    public function setUp(): void {
         parent::setUp();
         $this->plugin = new WP_SRI_Plugin();
         $this->excluded = get_option( WP_SRI_Plugin::$prefix . 'excluded_hashes', array() );
