@@ -1,8 +1,8 @@
 <?php
 /**
- * WordPress Subresource Integrity Manager Admin Interface
+ * List Table for managing known resource hashes.
  *
- * @package plugin
+ * @package WP_SRI_Plugin
  */
 
 if ( ! class_exists( 'WP_List_Table' ) ) {
@@ -192,14 +192,14 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 
         $url = esc_url( $item['url'] );
         if ( false === array_search( $url, $this->sri_exclude ) ) {
-            $actions['exclude'] =  sprintf(
+            $actions['exclude'] = sprintf(
                 '<a href="?page=%s&amp;action=%s&amp;url=%s&amp;_wp_sri_nonce=%s&amp;orderby=%s&amp;order=%s" title="%s">%s</a>',
                 $_REQUEST['page'], 'exclude', rawurlencode( $item['url'] ), wp_create_nonce( 'update_sri_hash' ),
                 ( ! empty( $_GET['orderby'] ) ) ? $_GET['orderby'] : '', ( ! empty( $_GET['order'] ) ) ? $_GET['order'] : '',
                 esc_html__( 'Exclude this URL.', WP_SRI_Plugin::$text_domain ), esc_html__( 'Exclude', WP_SRI_Plugin::$text_domain )
             );
         } else {
-            $actions['include'] =  sprintf(
+            $actions['include'] = sprintf(
                 '<a href="?page=%s&amp;action=%s&amp;url=%s&amp;_wp_sri_nonce=%s&amp;orderby=%s&amp;order=%s" title="%s">%s</a>',
                 $_REQUEST['page'], 'include', rawurlencode( $item['url'] ), wp_create_nonce( 'update_sri_hash' ),
                 ( !empty( $_GET['orderby'] ) ) ? $_GET['orderby'] : '', ( !empty( $_GET['order'] ) ) ? $_GET['order'] : '',
@@ -242,14 +242,14 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 
         if ( $checked ) {
             // If checked, we add $url to our exclusion array.
-            if ( ! in_array( $url, $excluded ) ) {
+            if ( ! in_array( $url, $excluded, true ) ) {
                 $excluded[] = $url;
                 $update     = true;
             }
         } else {
             // If unchecked, we remove $url from our exclusion array.
             $key = array_search( $url, $excluded, true );
-            if ( $key !== false ) {
+            if ( false !== $key ) {
                 unset( $excluded[ $key ] );
                 $update = true;
             }

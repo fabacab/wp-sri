@@ -25,18 +25,18 @@ class PluginTest extends WP_UnitTestCase {
 
     public function testLocalResourceIsSuccessfullyDetected() {
         $url = trailingslashit(get_site_url()) . '/example.js';
-        $this->assertTrue( $this->plugin->isLocalResource($url) );
+        $this->assertTrue( $this->plugin->is_local_resource($url) );
     }
 
     public function test_remoteResourceIsSuccessfullyDetected() {
         $url = 'https://cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js';
-        $this->assertFalse( $this->plugin->isLocalResource($url) );
+        $this->assertFalse( $this->plugin->is_local_resource($url) );
     }
 
     public function test_hashResource() {
         $content = 'alert("Hello, world!");';
         $expected_hash = 'niqXkYYIkmWt0jYVFjVzcI+Q5nc3jzIdmbLXJqKD5A8=';
-        $encoded_hash = $this->plugin->hashResource($content);
+        $encoded_hash = $this->plugin->hash_resource($content);
         $this->assertEquals( $expected_hash, $encoded_hash );
     }
 
@@ -45,7 +45,7 @@ class PluginTest extends WP_UnitTestCase {
             '//cdn.datatables.net/1.10.6/js/jquery.dataTables.min.js' => 'JOLmOuOEVbUWcM57vmy0F48W/2S7UCJB3USm7/Tu10U='
         ));
         $remaining_known_hashes = array();
-        $this->plugin->deleteKnownHash('//cdn.datatables.net/1.10.6/js/jquery.dataTables.min.js');
+        $this->plugin->delete_known_hash('//cdn.datatables.net/1.10.6/js/jquery.dataTables.min.js');
         $this->assertEquals($remaining_known_hashes, get_option('wp_sri_known_hashes'));
     }
 
@@ -59,7 +59,7 @@ class PluginTest extends WP_UnitTestCase {
 
         $this->assertCount( 2, $this->excluded );
         $this->assertFalse( array_search( esc_url( $url ), $this->excluded ) );
-        $this->plugin->updateExcludedUrl( $url, true );
+        $this->plugin->update_excluded_url( $url, true );
         $this->excluded = get_option( WP_SRI_Plugin::$prefix.'excluded_hashes', array() );
         $this->assertTrue( false !== array_search( esc_url( $url ), $this->excluded ) );
     }
@@ -74,7 +74,7 @@ class PluginTest extends WP_UnitTestCase {
         $_GET['url']            = rawurlencode( $url );
         $_GET['action']         = 'exclude';
 
-        $this->plugin->processActions();
+        $this->plugin->process_actions();
 
         // Grab our updated exclude array
         $this->excluded = get_option( WP_SRI_Plugin::$prefix.'excluded_hashes', array() );
@@ -87,7 +87,7 @@ class PluginTest extends WP_UnitTestCase {
         $_GET['url']            = rawurlencode( $url );
         $_GET['action']         = 'include';
 
-        $this->plugin->processActions();
+        $this->plugin->process_actions();
 
         // Grab our updated exclude array
         $this->excluded = get_option( WP_SRI_Plugin::$prefix.'excluded_hashes', array() );
