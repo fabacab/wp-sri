@@ -28,74 +28,74 @@ class PluginTest extends WP_UnitTestCase {
         $this->assertTrue( $this->plugin->is_local_resource($url) );
     }
 
-    public function test_remoteResourceIsSuccessfullyDetected() {
+    public function testRemoteResourceIsSuccessfullyDetected() {
         $url = 'https://cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js';
         $this->assertFalse( $this->plugin->is_local_resource($url) );
     }
 
-    public function test_hashResource() {
+    public function testHashResource() {
         $content = 'alert("Hello, world!");';
         $expected_hash = 'niqXkYYIkmWt0jYVFjVzcI+Q5nc3jzIdmbLXJqKD5A8=';
         $encoded_hash = $this->plugin->hash_resource($content);
         $this->assertEquals( $expected_hash, $encoded_hash );
     }
 
-    public function test_deleteKnownHash() {
-        update_option('wp_sri_known_hashes', array(
-            '//cdn.datatables.net/1.10.6/js/jquery.dataTables.min.js' => 'JOLmOuOEVbUWcM57vmy0F48W/2S7UCJB3USm7/Tu10U='
+    public function testDeleteKnownHash() {
+        update_option(WP_SRI_Plugin::$prefix . 'known_hashes', array(
+            'https://cdn.datatables.net/1.10.6/js/jquery.dataTables.min.js' => 'JOLmOuOEVbUWcM57vmy0F48W/2S7UCJB3USm7/Tu10U='
         ));
         $remaining_known_hashes = array();
-        $this->plugin->delete_known_hash('//cdn.datatables.net/1.10.6/js/jquery.dataTables.min.js');
-        $this->assertEquals($remaining_known_hashes, get_option('wp_sri_known_hashes'));
+        $this->plugin->delete_known_hash('https://cdn.datatables.net/1.10.6/js/jquery.dataTables.min.js');
+        $this->assertEquals($remaining_known_hashes, get_option(WP_SRI_Plugin::$prefix . 'known_hashes'));
     }
 
-    public function test_filterLinkTag() {
+    public function testFilterLinkTag() {
         // TODO: write a test with mock HTTP responses?
         $this->markTestSkipped();
     }
 
     public function testUpdateExcludedUrl() {
-        $url = '//fonts.googleapis.com/css?family=Lato%3A300%2C400%2C700&ver=1.0.0';
+        $url = 'https://fonts.googleapis.com/css?family=Lato%3A300%2C400%2C700&ver=1.0.0';
 
         $this->assertCount( 2, $this->excluded );
-        $this->assertFalse( array_search( esc_url( $url ), $this->excluded ) );
+        $this->assertFalse( array_search( esc_url_raw( $url ), $this->excluded ) );
         $this->plugin->update_excluded_url( $url, true );
-        $this->excluded = get_option( WP_SRI_Plugin::$prefix.'excluded_hashes', array() );
-        $this->assertTrue( false !== array_search( esc_url( $url ), $this->excluded ) );
+        $this->excluded = get_option( WP_SRI_Plugin::$prefix . 'excluded_hashes', array() );
+        $this->assertTrue( false !== array_search( esc_url_raw( $url ), $this->excluded ) );
     }
 
     public function testProcessActions() {
         $url = 'https://cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js';
 
-        $this->assertFalse( array_search( esc_url( $url ), $this->excluded ) );
+        $this->assertFalse( array_search( esc_url_raw( $url ), $this->excluded ) );
 
         // Set up our $_GET vars
-        $_GET['_wp_sri_nonce']  = wp_create_nonce( 'update_sri_hash' );
-        $_GET['url']            = rawurlencode( $url );
+        $_GET['_' . WP_SRI_Plugin::$prefix . 'nonce']  = wp_create_nonce( 'update_sri_hash' );
+        $_GET['url']            = esc_url_raw( $url );
         $_GET['action']         = 'exclude';
 
         $this->plugin->process_actions();
 
         // Grab our updated exclude array
-        $this->excluded = get_option( WP_SRI_Plugin::$prefix.'excluded_hashes', array() );
+        $this->excluded = get_option( WP_SRI_Plugin::$prefix . 'excluded_hashes', array() );
 
         // The plugin added our script and stylesheet so this should the 3rd
         $this->assertCount( 3, $this->excluded );
-        $this->assertEquals( 2, array_search( rawurldecode( $url ), $this->excluded ) );
+        $this->assertEquals( 2, array_search( esc_url_raw( $url ), $this->excluded ) );
 
-        $_GET['_wp_sri_nonce']  = wp_create_nonce( 'update_sri_hash' );
-        $_GET['url']            = rawurlencode( $url );
+        $_GET['_' . WP_SRI_Plugin::$prefix . 'nonce']  = wp_create_nonce( 'update_sri_hash' );
+        $_GET['url']            = esc_url_raw( $url );
         $_GET['action']         = 'include';
 
         $this->plugin->process_actions();
 
         // Grab our updated exclude array
-        $this->excluded = get_option( WP_SRI_Plugin::$prefix.'excluded_hashes', array() );
+        $this->excluded = get_option( WP_SRI_Plugin::$prefix . 'excluded_hashes', array() );
 
         // Our array count should be one fewer now.
         $this->assertCount( 2, $this->excluded );
         // URL should no longer be found the array
-        $this->assertEquals( false, array_search( rawurldecode( $url ), $this->excluded ) );
+        $this->assertEquals( false, array_search( esc_url_raw( $url ), $this->excluded ) );
     }
 
 }

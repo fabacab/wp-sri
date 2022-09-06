@@ -173,7 +173,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
         $actions = array(
             'delete' => sprintf(
                 '<a href="?page=%s&amp;action=%s&amp;url=%s&amp;_wp_sri_nonce=%s&amp;orderby=%s&amp;order=%s" title="%s">%s</a>',
-                $_REQUEST['page'], 'delete', rawurlencode( $item['url'] ), wp_create_nonce( 'update_sri_hash' ),
+                $_REQUEST['page'], 'delete', esc_url_raw( $item['url'] ), wp_create_nonce( 'update_sri_hash' ),
                 ( ! empty( $_GET['orderby'] ) ) ? $_GET['orderby'] : '', ( ! empty( $_GET['order'] ) ) ? $_GET['order'] : '',
                 esc_html__( 'Remove this URL and hash pair.', WP_SRI_Plugin::$text_domain ), esc_html__( 'Delete', WP_SRI_Plugin::$text_domain )
             )
@@ -194,14 +194,14 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
         if ( false === array_search( $url, $this->sri_exclude ) ) {
             $actions['exclude'] = sprintf(
                 '<a href="?page=%s&amp;action=%s&amp;url=%s&amp;_wp_sri_nonce=%s&amp;orderby=%s&amp;order=%s" title="%s">%s</a>',
-                $_REQUEST['page'], 'exclude', rawurlencode( $item['url'] ), wp_create_nonce( 'update_sri_hash' ),
+                $_REQUEST['page'], 'exclude', esc_url_raw( $item['url'] ), wp_create_nonce( 'update_sri_hash' ),
                 ( ! empty( $_GET['orderby'] ) ) ? $_GET['orderby'] : '', ( ! empty( $_GET['order'] ) ) ? $_GET['order'] : '',
                 esc_html__( 'Exclude this URL.', WP_SRI_Plugin::$text_domain ), esc_html__( 'Exclude', WP_SRI_Plugin::$text_domain )
             );
         } else {
             $actions['include'] = sprintf(
                 '<a href="?page=%s&amp;action=%s&amp;url=%s&amp;_wp_sri_nonce=%s&amp;orderby=%s&amp;order=%s" title="%s">%s</a>',
-                $_REQUEST['page'], 'include', rawurlencode( $item['url'] ), wp_create_nonce( 'update_sri_hash' ),
+                $_REQUEST['page'], 'include', esc_url_raw( $item['url'] ), wp_create_nonce( 'update_sri_hash' ),
                 ( !empty( $_GET['orderby'] ) ) ? $_GET['orderby'] : '', ( !empty( $_GET['order'] ) ) ? $_GET['order'] : '',
                 esc_html__( 'Include this URL.', WP_SRI_Plugin::$text_domain ), esc_html__( 'Include', WP_SRI_Plugin::$text_domain )
             );
@@ -213,7 +213,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 		$actions = array(
 			'edit_hash' => sprintf(
 				'<a href="?page=%s&action=%s&url=%s" title="%s">%s</a>',
-				$_REQUEST['page'], 'edit_hash', rawurlencode( $item['url'] ),
+				$_REQUEST['page'], 'edit_hash', esc_url_raw( $item['url'] ),
 				esc_html__( 'Edit the hash for this URL.', WP_SRI_Plugin::$text_domain ), esc_html__( 'Edit Hash', WP_SRI_Plugin::$text_domain )
 			)
 		);

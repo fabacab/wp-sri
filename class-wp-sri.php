@@ -61,7 +61,7 @@ class WP_SRI_Plugin {
         if( ! function_exists( 'get_plugin_data' ) ){
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
         }
-        $plugin = get_plugin_data( __FILE__, false, false );
+        $plugin = get_plugin_data( __DIR__ . '/wp-sri.php', false, false );
 
 		// Define our properties.
 		$this->version     = $plugin['Version'];
@@ -84,13 +84,13 @@ class WP_SRI_Plugin {
         add_action( 'wp_ajax_update_sri_exclude', array( 'WP_SRI_Known_Hashes_List_Table', 'update_sri_exclude' ) );
 
         // Give themes a chance to hook into our exclude filter.
-        add_action( 'after_setup_theme', array( $this, 'sri_exclude_own' ) );
+        add_action( 'after_setup_theme', array( $this, 'wp_sri_exclude_own' ) );
     }
 
     /**
      * Was getting errors locally with the stylesheet.
      */
-    public function sri_exclude_own() {
+    public function wp_sri_exclude_own() {
 		// Return if current request is an AJAX request.
         if ( wp_doing_ajax() ) {
             return;
@@ -345,7 +345,7 @@ class WP_SRI_Plugin {
         }
 
         // Make sure our scripts are added back in case they were removed.
-        $this->sri_exclude_own();
+        $this->wp_sri_exclude_own();
     }
 
 	/**
