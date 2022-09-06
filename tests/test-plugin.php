@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignoreFile
 /**
  * Test cases for the WP-SRI plugin.
  *
@@ -17,7 +17,6 @@ class PluginTest extends WP_UnitTestCase {
 	 */
     protected $excluded;
 
-    // phpcs:ignore
     public function setUp(): void {
         parent::setUp();
         $this->plugin = new WP_SRI_Plugin();

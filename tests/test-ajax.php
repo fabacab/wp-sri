@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignoreFile
 /**
  * Test cases for the WP-SRI plugin AJAX functions
  *
@@ -10,7 +10,6 @@ class AjaxTest extends WP_Ajax_UnitTestCase {
 	public $excluded;
 	public $url;
 
-	// phpcs:ignore
 	public function setUp() : void {
 		parent::setUp();
 
