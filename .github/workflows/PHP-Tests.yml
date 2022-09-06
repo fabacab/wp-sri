@@ -1,4 +1,4 @@
-name: PHPUnit
+name: PHP Tests
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
   pull_request:
 
 jobs:
-  phpunit:
-    name: PHPUnit (PHP ${{ matrix.php }} with WordPress ${{ matrix.wordpress }})
+  php_tests:
+    name: PHP Test (PHP ${{ matrix.php }} with WordPress ${{ matrix.wordpress }})
     runs-on: ubuntu-latest
 
     services:
