@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore Squiz.Commenting.FileComment.Missing
 /**
  * Plugin Name: Subresource Integrity (SRI) Manager
  * Plugin URI: https://maymay.net/blog/projects/wp-sri/
@@ -7,8 +7,6 @@
  * Requires at least: 4.1
  * Text Domain: wp-sri
  * Domain Path: /languages
- *
- * @package WP_SRI_Plugin
  */
 
 require_once dirname( __FILE__ ) . '/class-wp-sri.php';

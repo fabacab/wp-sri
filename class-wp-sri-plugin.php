@@ -58,7 +58,7 @@ class WP_SRI_Plugin {
 	 */
 	public function __construct() {
 		// Get plugin metadata.
-		if( ! function_exists( 'get_plugin_data' ) ){
+		if ( ! function_exists( 'get_plugin_data' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 		$plugin = get_plugin_data( __DIR__ . '/wp-sri.php', false, false );
@@ -107,7 +107,7 @@ class WP_SRI_Plugin {
 		 *
 		 * @var string[] $scripts An array of pre-defined resources to be excluded.
 		 */
-		$scripts = apply_filters( WP_SRI_Plugin::$prefix . 'exclude_array', $scripts );
+		$scripts = apply_filters( self::$prefix . 'exclude_array', $scripts ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
 
 		// Exclude hashes.
 		foreach ( $scripts as $script ) {
@@ -144,8 +144,8 @@ class WP_SRI_Plugin {
 		<div class="donation-appeal">
 			<p style="text-align: center; font-style: italic; margin: 1em 3em;">
 				<?php
-				// translators: Placeholders are links.
 				printf(
+					// translators: Placeholders are links.
 					esc_html__( 'WordPress Subresource Integrity Manager is provided as free software, but sadly grocery stores do not offer free food. If you like this plugin, please consider %1$s to its %2$s. &hearts; Thank you!', 'wp-sri' ),
 					'<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=TJLPJYXHSRBEE&lc=US&item_name=WordPress%20Subresource%20Integrity%20Plugin&item_number=wp-sri&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted">' . esc_html__( 'making a donation', 'wp-sri' ) . '</a>',
 					'<a href="http://Cyberbusking.org/">' . esc_html__( 'houseless, jobless, nomadic developer', 'wp-sri' ) . '</a>'
@@ -233,12 +233,13 @@ class WP_SRI_Plugin {
 	 */
 	public function filter_tag( $tag, $handle, $url ) {
 		// Only do the thing if it makes sense to do so.
-		// (It doesn't make sense for non-ssl pages or local resources on live sites,
-		// but it always makes sense to do so in debug mode.)
+		// It doesn't make sense for non-ssl pages or local resources on live sites, but it always makes sense to do so in debug mode.
 		if ( ! WP_DEBUG
 			&&
 			( ! is_ssl() || $this->is_local_resource( $url ) )
-		) { return $tag; }
+		) {
+			return $tag;
+		}
 
 		$known_hashes = get_option( self::$prefix . 'known_hashes', array() );
 		if ( empty( $known_hashes[ $url ] ) ) {
@@ -287,35 +288,42 @@ class WP_SRI_Plugin {
 	 * Responds to administrator actions such as deleting hashes, etc.
 	 */
 	public function process_actions() {
-
 		// Process bulk table action.
-		if ( isset( $_POST[ '_' . self::$prefix . 'nonce' ] ) && wp_verify_nonce( $_POST[ '_' . self::$prefix . 'nonce' ], 'bulk_update_sri_hashes' ) && isset( $_POST['url'] ) ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( isset( $_POST[ '_' . self::$prefix . 'nonce' ] ) && wp_verify_nonce( $_POST[ '_' . self::$prefix . 'nonce' ], 'bulk_update_sri_hashes' ) ) {
 			// Init list table.
 			$wp_sri_hashes_table = new WP_SRI_Known_Hashes_List_Table();
 
 			// Get current table action.
 			$action = $wp_sri_hashes_table->current_action();
 
-			// Get the url count to be used for admin notices.
-			$this->count = count( $_POST['url'] );
+			// Get url array.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$url_array = isset( $_POST['url'] ) ? (array) $_POST['url'] : array();
 
-			switch ($action) {
+			// Properly escape all urls.
+			$url_array = array_map( 'esc_url_raw', $url_array );
+
+			// Get the url count to be used for admin notices.
+			$this->count = count( $url_array );
+
+			switch ( $action ) {
 				case 'delete':
-					foreach ( $_POST['url'] as $url ) {
+					foreach ( $url_array as $url ) {
 						$this->delete_known_hash( esc_url_raw( $url ) );
 					}
 					add_action( 'admin_notices', array( $this, 'notice_hash_deleted' ) );
 					break;
 
 				case 'include':
-					foreach ( $_POST['url'] as $url ) {
+					foreach ( $url_array as $url ) {
 						$this->update_excluded_url( esc_url_raw( $url ), false );
 					}
 					add_action( 'admin_notices', array( $this, 'notice_url_included' ) );
 					break;
 
 				case 'exclude':
-					foreach ( $_POST['url'] as $url ) {
+					foreach ( $url_array as $url ) {
 						$this->update_excluded_url( esc_url_raw( $url ), true );
 					}
 					add_action( 'admin_notices', array( $this, 'notice_url_excluded' ) );
@@ -324,19 +332,23 @@ class WP_SRI_Plugin {
 		}
 
 		// Process row action.
-		if ( isset( $_GET['_' . self::$prefix . 'nonce'] ) && wp_verify_nonce( $_GET['_' . self::$prefix . 'nonce'], 'update_sri_hash' ) && isset( $_GET['url'] ) ) {
-			$action = $_GET['action'];
-			switch( $action ) {
+		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( isset( $_GET[ '_' . self::$prefix . 'nonce' ] ) && wp_verify_nonce( $_GET[ '_' . self::$prefix . 'nonce' ], 'update_sri_hash' ) ) {
+			$action = isset( $_GET['action'] ) ? esc_url_raw( $_GET['action'] ) : null;
+			$url    = isset( $_GET['url'] ) ? esc_url_raw( $_GET['url'] ) : null;
+			// phpcs:enable WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+			switch ( $action ) {
 				case 'delete':
-					$this->delete_known_hash( esc_url_raw( $_GET['url'] ) );
+					$this->delete_known_hash( $url );
 					add_action( 'admin_notices', array( $this, 'notice_hash_deleted' ) );
 					break;
 				case 'include':
-					$this->update_excluded_url( esc_url_raw( $_GET['url'] ), false );
+					$this->update_excluded_url( $url, false );
 					add_action( 'admin_notices', array( $this, 'notice_url_included' ) );
 					break;
 				case 'exclude':
-					$this->update_excluded_url( esc_url_raw( $_GET['url'] ), true );
+					$this->update_excluded_url( $url, true );
 					add_action( 'admin_notices', array( $this, 'notice_url_excluded' ) );
 					break;
 				default:
@@ -352,10 +364,14 @@ class WP_SRI_Plugin {
 	 * Displays an admin notice when a hash has been deleted.
 	 */
 	public function notice_hash_deleted() {
-		// translators: Placeholders are for the number of hashes that have been forgotten/removed.
 		?>
 		<div class="updated notice is-dismissible">
-			<p><?php printf( esc_html( _n( '%s hash has been forgotten.', '%s hashes have been forgotten.', $this->count, 'wp-sri' ) ), $this->count ); ?></p>
+			<p>
+				<?php
+				// translators: Placeholders are for the number of hashes that have been forgotten/removed.
+				echo esc_html( sprintf( _n( '%s hash has been forgotten.', '%s hashes have been forgotten.', $this->count, 'wp-sri' ), $this->count ) );
+				?>
+			</p>
 		</div>
 		<?php
 	}
@@ -364,10 +380,14 @@ class WP_SRI_Plugin {
 	 * Displays an admin notice when a resource is excluded.
 	 */
 	public function notice_url_excluded() {
-		// translators: Placeholders are for the number of resources excluded.
 		?>
 		<div class="updated notice is-dismissible">
-			<p><?php printf( esc_html( _n( '%s resource has been excluded.', '%s resources have been excluded.', $this->count, 'wp-sri' ) ), $this->count ); ?></p>
+			<p>
+				<?php
+				// translators: Placeholders are for the number of resources excluded.
+				echo esc_html( sprintf( _n( '%s resource has been excluded.', '%s resources have been excluded.', $this->count, 'wp-sri' ), $this->count ) );
+				?>
+			</p>
 		</div>
 		<?php
 	}
@@ -376,10 +396,14 @@ class WP_SRI_Plugin {
 	 * Display an admin notice when a resource is included.
 	 */
 	public function notice_url_included() {
-		// translators: Placeholders are for the number of resources included.
 		?>
 		<div class="updated notice is-dismissible">
-			<p><?php printf( esc_html( _n( '%s resource has been included.', '%s resources have been included.', $this->count, 'wp-sri' ) ), $this->count ); ?></p>
+			<p>
+				<?php
+				// translators: Placeholders are for the number of resources included.
+				echo esc_html( sprintf( _n( '%s resource has been included.', '%s resources have been included.', $this->count, 'wp-sri' ), $this->count ) );
+				?>
+			</p>
 		</div>
 		<?php
 	}
@@ -405,7 +429,7 @@ class WP_SRI_Plugin {
 	public function load_admin_page() {
 		global $wp_sri_hashes_table;
 
-		// Init list table
+		// Init list table.
 		$wp_sri_hashes_table = new WP_SRI_Known_Hashes_List_Table();
 
 		// Register screen options.
@@ -418,10 +442,13 @@ class WP_SRI_Plugin {
 			)
 		);
 
-		$screen  = get_current_screen();
-		$content = '<p>';
-		// translators: The placeholders are for open/close <code> tags.
+		// Get screen object.
+		$screen = get_current_screen();
+
+		// Define help tab content.
+		$content  = '<p>';
 		$content .= sprintf(
+			// translators: The placeholders are for open/close <code> tags.
 			esc_html__( 'This page lets you manage automatic integrity checks of subresources that pages on your site load. Subresources are assets that are referenced from within %1$sscript%2$s or %1$slink%2$s elements, such as JavaScript files or stylesheets. When your page loads such assets from servers other than your own, as is often done with Content Delivery Networks (CDNs), you can verify that the requested file contains exactly the code you expect it to by adding an integrity check.', 'wp-sri' ),
 			'<code>',
 			'</code>'
@@ -456,12 +483,17 @@ class WP_SRI_Plugin {
 
 	/**
 	 * Set screen options for admin page.
+	 *
+	 * @param mixed  $screen_option The value to save instead of the option value.
+	 *                              Default false (to skip saving the current option).
+	 * @param string $option        The option name.
+	 * @param int    $value         The option value.
 	 */
-	public function set_admin_screen_options( $status, $option, $value ) {
+	public function set_admin_screen_options( $screen_option, $option, $value ) {
 		if ( self::$prefix . 'hashes_per_page' === $option ) {
 			return $value;
 		}
-		return $status;
+		return $screen_option;
 	}
 
 	/**
@@ -475,7 +507,7 @@ class WP_SRI_Plugin {
 		$wp_sri_hashes_table->prepare_items();
 		?>
 		<div class="wrap">
-		<h2><?php esc_html_e( 'Subresource Integrity Manager', 'wp-sri' );?></h2>
+		<h2><?php esc_html_e( 'Subresource Integrity Manager', 'wp-sri' ); ?></h2>
 		<form action="<?php echo esc_url( admin_url( 'tools.php?page=' . self::$prefix . 'admin' ) ); ?>" method="post">
 		<?php
 			wp_nonce_field( 'bulk_update_sri_hashes', '_' . self::$prefix . 'nonce' );

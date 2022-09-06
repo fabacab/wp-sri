@@ -1,12 +1,18 @@
-<?php
+<?php //phpcs:ignoreFile WordPress.WP.I18n.NonSingularStringLiteralDomain
 /**
  * List Table for managing known resource hashes.
  *
  * @package WP_SRI_Plugin
  */
 
+// Include the WP_List_Table class.
 if ( ! class_exists( 'WP_List_Table' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
+}
+
+// Make sure plugin class is usable.
+if ( ! class_exists( 'WP_SRI_Plugin' ) ) {
+	require_once __DIR__ . '/class-wp-sri.php';
 }
 
 /**
@@ -65,7 +71,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 		return array(
 			'url'     => array( 'url', false ),
 			'hash'    => array( 'hash', false ),
-			'exclude' => array( 'exclude', true )
+			'exclude' => array( 'exclude', true ),
 		);
 	}
 
@@ -76,7 +82,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 		return array(
 			'delete'  => esc_html__( 'Delete', WP_SRI_Plugin::$text_domain ),
 			'exclude' => esc_html__( 'Exclude', WP_SRI_Plugin::$text_domain ),
-			'include' => esc_html__( 'Include', WP_SRI_Plugin::$text_domain )
+			'include' => esc_html__( 'Include', WP_SRI_Plugin::$text_domain ),
 		);
 	}
 
@@ -124,7 +130,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 			array(
 				'total_items' => $total_hashes,
 				'total_pages' => ceil( $total_hashes / $show_on_page ),
-				'per_page'    => $show_on_page
+				'per_page'    => $show_on_page,
 			)
 		);
 
@@ -134,7 +140,7 @@ class WP_SRI_Known_Hashes_List_Table extends WP_List_Table {
 			$items[] = array(
 				'url'     => $url,
 				'hash'    => $hash,
-				'exclude' => $exclude
+				'exclude' => $exclude,
 			);
 		}
 
