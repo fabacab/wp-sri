@@ -9,9 +9,9 @@
  * Domain Path: /languages
  */
 
-if (!defined('ABSPATH')) exit; // Disallow direct HTTP access.
+if ( ! defined( 'ABSPATH' ) ) exit; // Disallow direct HTTP access.
 
-require_once dirname(__FILE__) . '/wp-sri-admin.php';
+require_once dirname( __FILE__ ) . '/class-wp-sri-known-hashes-list-table.php';
 
 /**
  * Main plugin class.
@@ -44,26 +44,33 @@ class WP_SRI_Plugin {
      */
     private $version;
 
+	/**
+	 * Plugin text domain
+	 * @var string
+	 */
+	public static $text_domain;
+
     public function __construct () {
 
         // Get plugin metadata
-        if( ! function_exists('get_plugin_data') ){
+        if( ! function_exists( 'get_plugin_data' ) ){
             require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
         }
         $plugin = get_plugin_data( __FILE__, false, false );
         $this->version = $plugin['Version'];
         self::$prefix = str_replace( '-', '_', $plugin['TextDomain'] ) . '_';
+		self::$text_domain = $plugin['TextDomain'];
 
         // Grab our exclusion array from the options table.
         $this->sri_exclude = get_option( self::$prefix.'excluded_hashes', array() );
 
-        add_action('plugins_loaded', array($this, 'registerL10n'));
-        add_action('current_screen', array($this, 'processActions'));
-        add_action('admin_menu', array($this, 'registerAdminMenu'));
+        add_action( 'plugins_loaded', array( $this, 'registerL10n' ) );
+        add_action( 'current_screen', array( $this, 'processActions' ) );
+        add_action( 'admin_menu', array( $this, 'registerAdminMenu' ) );
 
-        add_filter('style_loader_tag', array($this, 'filterTag'), 999999, 3);
-        add_filter('script_loader_tag', array($this, 'filterTag'), 999999, 3);
-        add_filter('set-screen-option', array($this, 'setAdminScreenOptions'), 10, 3);
+        add_filter( 'style_loader_tag', array( $this, 'filterTag' ), 999999, 3 );
+        add_filter( 'script_loader_tag', array( $this, 'filterTag' ), 999999, 3 );
+        add_filter( 'set-screen-option', array( $this, 'setAdminScreenOptions' ), 10, 3 );
 
         add_action( 'admin_enqueue_scripts', array( $this, 'sri_admin_enqueue_scripts' ) );
 
@@ -107,7 +114,7 @@ class WP_SRI_Plugin {
     }
 
     public function registerL10n () {
-        load_plugin_textdomain('wp-sri', false, dirname(plugin_basename(__FILE__)) . '/languages/');
+        load_plugin_textdomain( 'wp-sri', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
     }
 
 
@@ -115,9 +122,9 @@ class WP_SRI_Plugin {
 ?>
 <div class="donation-appeal">
     <p style="text-align: center; font-style: italic; margin: 1em 3em;"><?php print sprintf(
-esc_html__('WordPress Subresource Integrity Manager is provided as free software, but sadly grocery stores do not offer free food. If you like this plugin, please consider %1$s to its %2$s. &hearts; Thank you!', 'wp-sri'),
-'<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=TJLPJYXHSRBEE&lc=US&item_name=WordPress%20Subresource%20Integrity%20Plugin&item_number=wp-sri&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted">' . esc_html__('making a donation', 'wp-sri') . '</a>',
-'<a href="http://Cyberbusking.org/">' . esc_html__('houseless, jobless, nomadic developer', 'wp-sri') . '</a>'
+esc_html__( 'WordPress Subresource Integrity Manager is provided as free software, but sadly grocery stores do not offer free food. If you like this plugin, please consider %1$s to its %2$s. &hearts; Thank you!', 'wp-sri' ),
+'<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=TJLPJYXHSRBEE&lc=US&item_name=WordPress%20Subresource%20Integrity%20Plugin&item_number=wp-sri&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted">' . esc_html__( 'making a donation', 'wp-sri' ) . '</a>',
+'<a href="http://Cyberbusking.org/">' . esc_html__( 'houseless, jobless, nomadic developer', 'wp-sri' ) . '</a>'
 );?></p>
 </div>
 <?php
@@ -131,10 +138,10 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
      * @param string $uri The URI of the resource to inspect.
      * @return bool True if the resource is local, false if the resource is remote.
      */
-    public static function isLocalResource ($uri) {
-        $rsrc_host = parse_url($uri, PHP_URL_HOST);
-        $this_host = parse_url(get_site_url(), PHP_URL_HOST);
-        return (0 === strpos($rsrc_host, $this_host)) ? true : false;
+    public static function isLocalResource ( $uri ) {
+        $rsrc_host = parse_url( $uri, PHP_URL_HOST );
+        $this_host = parse_url( get_site_url(), PHP_URL_HOST );
+        return ( 0 === strpos( $rsrc_host, $this_host ) ) ? true : false;
     }
 
     /**
@@ -144,31 +151,31 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
      * @param string $url The URL of the resource to find the hash for.
      * @return string The HTML tag with an integrity attribute added.
      */
-    public function addIntegrityAttribute ($tag, $url) {
+    public function addIntegrityAttribute ( $tag, $url ) {
         // If $url is found in our excluded array, return $tag unchanged
-        if ( false !== array_search( esc_url( $url ), $this->sri_exclude) ) {
+        if ( false !== array_search( esc_url( $url ), $this->sri_exclude ) ) {
             return $tag;
         }
-        $known_hashes = get_option(self::$prefix.'known_hashes', array());
+        $known_hashes = get_option( self::$prefix.'known_hashes', array() );
         $sri_att = ' crossorigin="anonymous" integrity="sha256-' . $known_hashes[$url] . '"';
-        $insertion_pos = strpos($tag, '>');
+        $insertion_pos = strpos( $tag, '>' );
         // account for self-closing tags
-        if (0 === strpos($tag, '<link ')) {
+        if ( 0 === strpos( $tag, '<link ' ) ) {
             $insertion_pos--;
             $sri_att .= ' ';
         }
-        return substr($tag, 0, $insertion_pos) . $sri_att . substr($tag, $insertion_pos);
+        return substr( $tag, 0, $insertion_pos ) . $sri_att . substr( $tag, $insertion_pos );
     }
 
-    public function fetchResource ($rsrc_url) {
-        $url = (0 === strpos($rsrc_url, '//'))
-            ? ((is_ssl()) ? "https:$rsrc_url" : "http:$rsrc_url")
+    public function fetchResource ( $rsrc_url ) {
+        $url = ( 0 === strpos( $rsrc_url, '//' ) )
+            ? ( ( is_ssl() ) ? "https:$rsrc_url" : "http:$rsrc_url" )
             : $rsrc_url;
-        return wp_remote_get($url);
+        return wp_remote_get( $url );
     }
 
-    public function hashResource ($content) {
-        return base64_encode(hash('sha256', $content, true));
+    public function hashResource ( $content ) {
+        return base64_encode( hash( 'sha256', $content, true ) );
     }
 
     /**
@@ -212,10 +219,10 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
      * @param string $url The URL of the URL/hash pair to remove.
      * @return bool True on success, false otherwise.
      */
-    public function deleteKnownHash ($url) {
-        $known_hashes = get_option(self::$prefix . 'known_hashes', array());
-        unset($known_hashes[$url]);
-        return update_option(self::$prefix . 'known_hashes', $known_hashes);
+    public function deleteKnownHash( $url ) {
+        $known_hashes = get_option( self::$prefix . 'known_hashes', array() );
+        unset( $known_hashes[$url] );
+        return update_option( self::$prefix . 'known_hashes', $known_hashes );
     }
 
     /**
@@ -238,7 +245,7 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
      * Responds to administrator actions such as deleting hashes, etc.
      */
     public function processActions () {
-        if (isset($_POST['_' . self::$prefix . 'nonce']) && wp_verify_nonce($_POST['_' . self::$prefix . 'nonce'], 'bulk_update_sri_hashes')) {
+        if ( isset( $_POST['_' . self::$prefix . 'nonce'] ) && wp_verify_nonce( $_POST['_' . self::$prefix . 'nonce'], 'bulk_update_sri_hashes' ) ) {
             $wp_sri_hashes_table = new WP_SRI_Known_Hashes_List_Table();
             $action = $wp_sri_hashes_table->current_action();
             // So we can customize our admin update notice
@@ -264,20 +271,20 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
             }
         }
 
-        if (isset($_GET['_' . self::$prefix . 'nonce']) && wp_verify_nonce($_GET['_' . self::$prefix . 'nonce'], 'update_sri_hash')) {
+        if ( isset( $_GET['_' . self::$prefix . 'nonce'] ) && wp_verify_nonce( $_GET['_' . self::$prefix . 'nonce'], 'update_sri_hash' ) ) {
             $action = $_GET['action'];
             switch( $action ) {
                 case 'delete':
-                    $this->deleteKnownHash(rawurldecode($_GET['url']));
-                    add_action('admin_notices', array($this, 'hashDeletedNotice'));
+                    $this->deleteKnownHash( rawurldecode( $_GET['url'] ) );
+                    add_action( 'admin_notices', array( $this, 'hashDeletedNotice' ) );
                     break;
                 case 'include':
-                    $this->updateExcludedUrl(rawurldecode($_GET['url']), false );
-                    add_action('admin_notices', array($this, 'includeUrlUpdatedNotice'));
+                    $this->updateExcludedUrl( rawurldecode( $_GET['url'] ), false );
+                    add_action( 'admin_notices', array( $this, 'includeUrlUpdatedNotice' ) );
                     break;
                 case 'exclude':
-                    $this->updateExcludedUrl(rawurldecode($_GET['url']), true );
-                    add_action('admin_notices', array($this, 'excludeUrlUpdatedNotice'));
+                    $this->updateExcludedUrl( rawurldecode( $_GET['url'] ), true );
+                    add_action( 'admin_notices', array( $this, 'excludeUrlUpdatedNotice' ) );
                     break;
                 default:
                     break;
@@ -313,15 +320,15 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         <?php
     }
 
-    public function registerAdminMenu () {
+    public function registerAdminMenu() {
         $hook = add_management_page(
-            __('Subresource Integrity Manager', 'wp-sri'),
-            __('Subresource Integrity Manager', 'wp-sri'),
+            __( 'Subresource Integrity Manager', 'wp-sri' ),
+            __( 'Subresource Integrity Manager', 'wp-sri' ),
             'manage_options',
             self::$prefix . 'admin',
-            array($this, 'renderToolPage')
+            array( $this, 'renderToolPage' )
         );
-        add_action("load-$hook", array($this, 'addAdminScreenOptions'));
+        add_action( "load-$hook", array( $this, 'addAdminScreenOptions' ) );
         add_action( 'admin_print_styles-' . $hook, array( $this, 'addAdminStyle' ) );
     }
 
@@ -329,42 +336,42 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
         global $wp_sri_hashes_table;
         $wp_sri_hashes_table = new WP_SRI_Known_Hashes_List_Table();
 
-        add_screen_option('per_page', array(
-            'label' => esc_html__('Hashes', 'wp-sri'),
+        add_screen_option( 'per_page', array(
+            'label'   => esc_html__( 'Hashes', 'wp-sri' ),
             'default' => 20,
-            'option' => self::$prefix . 'hashes_per_page'
-        ));
+            'option'  => self::$prefix . 'hashes_per_page'
+        ) );
 
         $screen = get_current_screen();
         $content = '<p>';
         $content .= sprintf(
-            esc_html__('This page lets you manage automatic integrity checks of subresources that pages on your site load. Subresources are assets that are referenced from within %1$sscript%2$s or %1$slink%2$s elements, such as JavaScript files or stylesheets. When your page loads such assets from servers other than your own, as is often done with Content Delivery Networks (CDNs), you can verify that the requested file contains exactly the code you expect it to by adding an integrity check.', 'wp-sri'),
+            esc_html__( 'This page lets you manage automatic integrity checks of subresources that pages on your site load. Subresources are assets that are referenced from within %1$sscript%2$s or %1$slink%2$s elements, such as JavaScript files or stylesheets. When your page loads such assets from servers other than your own, as is often done with Content Delivery Networks (CDNs), you can verify that the requested file contains exactly the code you expect it to by adding an integrity check.', 'wp-sri' ),
             '<code>', '</code>'
         );
         $content .= '</p>';
         $content .= '<ul>';
-        $content .= '<li>' . esc_html__('The "URL" column shows you the Web address of the resource being loaded.', 'wp-sri') . '</li>';
-        $content .= '<li>' . esc_html__('The "Hash" column shows you what WP-SRI thinks the cryptographic hash of the resource should be.', 'wp-sri') . '</li>';
-        $content .= '<li>' . esc_html__('The "Exclude" column lets you tell WP-SRI not to add integrity-checking code to your pages for a given resource.', 'wp-sri') . '</li>';
+        $content .= '<li>' . esc_html__( 'The "URL" column shows you the Web address of the resource being loaded.', 'wp-sri' ) . '</li>';
+        $content .= '<li>' . esc_html__( 'The "Hash" column shows you what WP-SRI thinks the cryptographic hash of the resource should be.', 'wp-sri' ) . '</li>';
+        $content .= '<li>' . esc_html__( 'The "Exclude" column lets you tell WP-SRI not to add integrity-checking code to your pages for a given resource.', 'wp-sri' ) . '</li>';
         $content .= '</ul>';
-        $content .= '<p><strong>' . esc_html__('Tips', 'wp-sri') . '</strong></p>';
+        $content .= '<p><strong>' . esc_html__( 'Tips', 'wp-sri' ) . '</strong></p>';
         $content .= '<ul>';
-        $content .= '<li>' . esc_html__('If some pages are not loading correctly, use the developer tools in your Web browser to see if any assets are being blocked and need to be excluded. Excluding an asset means the resource will be added to your pages without the SRI attributes, but WP-SRI will still remember its hash.', 'wp-sri') . '</li>';
+        $content .= '<li>' . esc_html__( 'If some pages are not loading correctly, use the developer tools in your Web browser to see if any assets are being blocked and need to be excluded. Excluding an asset means the resource will be added to your pages without the SRI attributes, but WP-SRI will still remember its hash.', 'wp-sri' ) . '</li>';
         $content .= '</ul>';
-        $content .= '<p>' . sprintf(esc_html__('Learn more about %sSubresource Integrity%s features.', 'wp-sri'), '<a href="https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity">', '</a>') . '</p>';
+        $content .= '<p>' . sprintf( esc_html__( 'Learn more about %sSubresource Integrity%s features.', 'wp-sri' ), '<a href="https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity">', '</a>' ) . '</p>';
         $screen->add_help_tab( array(
-            'id' => self::$prefix.'help_tab',
-            'title' => 'Managing Subresource Integrity',
+            'id'      => self::$prefix.'help_tab',
+            'title'   => 'Managing Subresource Integrity',
             'content' => $content
-        ));
+        ) );
     }
 
     public function addAdminStyle() {
         wp_enqueue_style( 'wp-sri-style', plugin_dir_url( __FILE__ ) . 'css/wp-sri.css', array(), $this->version );
     }
 
-    public function setAdminScreenOptions ($status, $option, $value) {
-        if (self::$prefix . 'hashes_per_page' === $option) {
+    public function setAdminScreenOptions( $status, $option, $value ) {
+        if ( self::$prefix . 'hashes_per_page' === $option ) {
             return $value;
         }
         return $status;
@@ -372,17 +379,17 @@ esc_html__('WordPress Subresource Integrity Manager is provided as free software
 
     public function renderToolPage () {
         global $wp_sri_hashes_table;
-        if (!current_user_can('manage_options')) {
-            wp_die(__('You do not have sufficient permissions to access this page.', 'wp-sri'));
+        if ( ! current_user_can( 'manage_options' )) {
+            wp_die( __( 'You do not have sufficient permissions to access this page.', 'wp-sri' ) );
         }
         $wp_sri_hashes_table->prepare_items();
 ?>
 <div class="wrap">
-<h2><?php esc_html_e('Subresource Integrity Manager', 'wp-sri');?></h2>
-<form action="<?php print admin_url('tools.php?page=' . self::$prefix . 'admin');?>" method="post">
+<h2><?php esc_html_e( 'Subresource Integrity Manager', 'wp-sri' );?></h2>
+<form action="<?php print admin_url( 'tools.php?page=' . self::$prefix . 'admin' );?>" method="post">
 <?php
-        wp_nonce_field('bulk_update_sri_hashes', '_' . self::$prefix . 'nonce');
-        $wp_sri_hashes_table->search_box(esc_html__('Search', 'wp-sri'), self::$prefix . 'search_hashes');
+        wp_nonce_field( 'bulk_update_sri_hashes', '_' . self::$prefix . 'nonce' );
+        $wp_sri_hashes_table->search_box( esc_html__( 'Search', 'wp-sri' ), self::$prefix . 'search_hashes' );
         $wp_sri_hashes_table->display();
 ?>
 </form>
