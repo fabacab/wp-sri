@@ -48,13 +48,15 @@ Learn more [about this filter hook](https://developer.wordpress.org/reference/ho
 
 = Version 0.5.0 =
 
+* Fixed likelihood typo in readme.
 * Changed AJAX notice for the exclude checkbox from working.gif to added/removed text.
 * Changed jQuery `ajax()` to `fetch()`.
-* Moved `Requires at least` from readme.txt to plugin main PHP file. See https://core.trac.wordpress.org/ticket/48520#comment:18.
+* Changed automated tests from Travis CI to GitHub Actions.
+* Changed `Requires at least` location from readme.txt to plugin main PHP file. See https://core.trac.wordpress.org/ticket/48520#comment:18.
+* Changed readme contributors to include those that have contributed to GitHub repo.
 * Added `.gitignore`.
 * Added `composer.json` for dev requirements for testing.
-* Changed automated tests from Travis CI to GitHub Actions.
-* Added PHP_CodeSniffer to use PHP and WordPress coding standards.
+* Added PHP_CodeSniffer to validate PHP and WordPress coding standards.
 
 = Version 0.4.0 =
 
