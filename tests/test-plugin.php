@@ -94,7 +94,7 @@ class PluginTest extends WP_UnitTestCase {
 
         // Our array count should be one fewer now.
         $this->assertCount( 2, $this->excluded );
-        // URL should no longer be found the array
+        // URL should no longer be found the array.
         $this->assertEquals( false, array_search( esc_url_raw( $url ), $this->excluded ) );
     }
 

@@ -9,6 +9,6 @@
  * Domain Path: /languages
  */
 
-require_once dirname( __FILE__ ) . '/class-wp-sri.php';
+require_once dirname( __FILE__ ) . '/class-wp-sri-plugin.php';
 
 new WP_SRI_Plugin();

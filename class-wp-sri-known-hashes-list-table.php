@@ -12,7 +12,7 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 
 // Make sure plugin class is usable.
 if ( ! class_exists( 'WP_SRI_Plugin' ) ) {
-	require_once __DIR__ . '/class-wp-sri.php';
+	require_once __DIR__ . '/class-wp-sri-plugin.php';
 }
 
 /**

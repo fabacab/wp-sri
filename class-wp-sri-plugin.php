@@ -22,7 +22,14 @@ class WP_SRI_Plugin {
 	 *
 	 * @var string
 	 */
-	public static $prefix;
+	public static $prefix = 'wp_sri_';
+
+	/**
+	 * Plugin text domain
+	 *
+	 * @var string
+	 */
+	public static $text_domain = 'wp-sri';
 
 	/**
 	 * Options array of excluded asset URLs
@@ -47,13 +54,6 @@ class WP_SRI_Plugin {
 	private $version;
 
 	/**
-	 * Plugin text domain
-	 *
-	 * @var string
-	 */
-	public static $text_domain;
-
-	/**
 	 * Constructor for plugin class.
 	 */
 	public function __construct() {
@@ -64,9 +64,7 @@ class WP_SRI_Plugin {
 		$plugin = get_plugin_data( __DIR__ . '/wp-sri.php', false, false );
 
 		// Define our properties.
-		$this->version     = $plugin['Version'];
-		self::$prefix      = str_replace( '-', '_', $plugin['TextDomain'] ) . '_';
-		self::$text_domain = $plugin['TextDomain'];
+		$this->version = $plugin['Version'];
 
 		// Grab our exclusion array from the options table.
 		$this->sri_exclude = get_option( self::$prefix . 'excluded_hashes', array() );
@@ -84,13 +82,13 @@ class WP_SRI_Plugin {
 		add_action( 'wp_ajax_update_sri_exclude', array( 'WP_SRI_Known_Hashes_List_Table', 'update_sri_exclude' ) );
 
 		// Give themes a chance to hook into our exclude filter.
-		add_action( 'after_setup_theme', array( $this, 'wp_sri_exclude_own' ) );
+		add_action( 'after_setup_theme', array( $this, 'sri_exclude_own' ) );
 	}
 
 	/**
 	 * Was getting errors locally with the stylesheet.
 	 */
-	public function wp_sri_exclude_own() {
+	public function sri_exclude_own() {
 		// Return if current request is an AJAX request.
 		if ( wp_doing_ajax() ) {
 			return;
@@ -357,7 +355,7 @@ class WP_SRI_Plugin {
 		}
 
 		// Make sure our scripts are added back in case they were removed.
-		$this->wp_sri_exclude_own();
+		$this->sri_exclude_own();
 	}
 
 	/**
