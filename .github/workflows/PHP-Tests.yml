@@ -71,12 +71,12 @@ jobs:
         run: composer install --no-dev --no-progress --prefer-dist --optimize-autoloader
 
       - name: Install PHPUnit
-        run: >
-          composer global require yoast/phpunit-polyfills &&
-          if [ $(echo "${{ matrix.wordpress }}>=5.9" | bc -l) = 1 ] && [ $(echo "${{ matrix.php }}>=7.4" | bc -l) = 1 ]; then
-            composer global require phpunit/phpunit ^9;
-          elif [ $(echo "${{ matrix.wordpress }}>=5.6" | bc -l) = 1 ] && [ $(echo "${{ matrix.wordpress }}<=5.8" | bc -l) = 1 ] && [ $(echo "${{ matrix.php }}>=7.4" | bc -l) = 1 ]; then
-            composer global require phpunit/phpunit ^7 --with-all-dependencies;
+        run: |
+          composer global require yoast/phpunit-polyfills
+          if dpkg --compare-versions "${{ matrix.wordpress }}" ge 5.9 && dpkg --compare-versions "${{ matrix.php }}" ge 7.4; then
+            composer global require "phpunit/phpunit:^9.0"
+          elif dpkg --compare-versions "${{ matrix.wordpress }}" ge 5.6 && dpkg --compare-versions "${{ matrix.wordpress }}" le 5.8 && dpkg --compare-versions "${{ matrix.php }}" ge 7.4; then
+            composer global require --with-all-dependencies "phpunit/phpunit:^7.0"
           fi
       
       - name: Install PHP_CodeSniffer
