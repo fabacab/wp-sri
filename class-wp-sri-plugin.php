@@ -332,25 +332,27 @@ class WP_SRI_Plugin {
 		// Process row action.
 		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( isset( $_GET[ '_' . self::$prefix . 'nonce' ] ) && wp_verify_nonce( $_GET[ '_' . self::$prefix . 'nonce' ], 'update_sri_hash' ) ) {
-			$action = isset( $_GET['action'] ) ? esc_url_raw( $_GET['action'] ) : null;
-			$url    = isset( $_GET['url'] ) ? esc_url_raw( $_GET['url'] ) : null;
-			// phpcs:enable WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			if ( isset( $_GET['action'] ) && isset( $_GET['url'] ) ) {
+				$url    = $_GET['url'];
+				$action = $_GET['action'];
+				// phpcs:enable WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
-			switch ( $action ) {
-				case 'delete':
-					$this->delete_known_hash( $url );
-					add_action( 'admin_notices', array( $this, 'notice_hash_deleted' ) );
-					break;
-				case 'include':
-					$this->update_excluded_url( $url, false );
-					add_action( 'admin_notices', array( $this, 'notice_url_included' ) );
-					break;
-				case 'exclude':
-					$this->update_excluded_url( $url, true );
-					add_action( 'admin_notices', array( $this, 'notice_url_excluded' ) );
-					break;
-				default:
-					break;
+				switch ( $action ) {
+					case 'delete':
+						$this->delete_known_hash( $url );
+						add_action( 'admin_notices', array( $this, 'notice_hash_deleted' ) );
+						break;
+					case 'include':
+						$this->update_excluded_url( $url, false );
+						add_action( 'admin_notices', array( $this, 'notice_url_included' ) );
+						break;
+					case 'exclude':
+						$this->update_excluded_url( $url, true );
+						add_action( 'admin_notices', array( $this, 'notice_url_excluded' ) );
+						break;
+					default:
+						break;
+				}
 			}
 		}
 

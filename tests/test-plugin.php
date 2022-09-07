@@ -67,29 +67,33 @@ class PluginTest extends WP_UnitTestCase {
     public function testProcessActions() {
         $url = 'https://cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js';
 
+        // Check that this URL is not already excluded.
         $this->assertFalse( array_search( esc_url_raw( $url ), $this->excluded ) );
 
-        // Set up our $_GET vars
+        // Set up our $_GET vars to exclude.
+        $_GET['action'] = 'exclude';
+        $_GET['url'] = esc_url_raw( $url );
         $_GET['_' . WP_SRI_Plugin::$prefix . 'nonce']  = wp_create_nonce( 'update_sri_hash' );
-        $_GET['url']            = esc_url_raw( $url );
-        $_GET['action']         = 'exclude';
 
+        // Process the exclude action.
         $this->plugin->process_actions();
 
-        // Grab our updated exclude array
+        // Grab our updated exclude array.
         $this->excluded = get_option( WP_SRI_Plugin::$prefix . 'excluded_hashes', array() );
 
-        // The plugin added our script and stylesheet so this should the 3rd
+        // The plugin added our script and stylesheet so this should the 3rd.
         $this->assertCount( 3, $this->excluded );
         $this->assertEquals( 2, array_search( esc_url_raw( $url ), $this->excluded ) );
 
+        // Set up our $_GET vars to include.
+        $_GET['action'] = 'include';
+        $_GET['url'] = esc_url_raw( $url );
         $_GET['_' . WP_SRI_Plugin::$prefix . 'nonce']  = wp_create_nonce( 'update_sri_hash' );
-        $_GET['url']            = esc_url_raw( $url );
-        $_GET['action']         = 'include';
 
+        // Process the include action.
         $this->plugin->process_actions();
 
-        // Grab our updated exclude array
+        // Grab our updated exclude array.
         $this->excluded = get_option( WP_SRI_Plugin::$prefix . 'excluded_hashes', array() );
 
         // Our array count should be one fewer now.
