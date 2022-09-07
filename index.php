@@ -1,2 +1,2 @@
-<?php
-// This file intentionally left blank. :)
+<?php //phpcs:ignoreFile
+/** This file intentionally left blank. :) */
