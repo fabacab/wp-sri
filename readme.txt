@@ -15,7 +15,7 @@ A WordPress plugin for easily adding a [Subresource Integrity (SRI)](//www.w3.or
 
 Currently, the plugin automatically detects any third-party resources (like JavaScript libraries) and will make a SHA-256 hash of the content. It remembers this hash (until you uninstall the plugin or delete the hash from the admin interface), and modifies your page's `<script>` and `<link>` elements on-the-fly. This way, your visitor's Web browsers can automatically ensure that the specific library you're using is the one they're loading.
 
-Using this plugin can dramatically reduce the liklihood that visitors to your site will be strong-armed into participating in an HTTP DDoS attack. For more information, see "[An introduction to JavaScript-based DDoS](https://blog.cloudflare.com/an-introduction-to-javascript-based-ddos/)" by Nick Sullivan.
+Using this plugin can dramatically reduce the likelihood that visitors to your site will be strong-armed into participating in an HTTP DDoS attack. For more information, see "[An introduction to JavaScript-based DDoS](https://blog.cloudflare.com/an-introduction-to-javascript-based-ddos/)" by Nick Sullivan.
 
 Future versions of this plugin will also provide an easy-to-use interface for site administrators to maintain a customized list of resource hashes, and to trigger on-demand integrity checks of these resources.
 
