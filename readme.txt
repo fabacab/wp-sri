@@ -47,6 +47,15 @@ Learn more [about this filter hook](https://developer.wordpress.org/reference/ho
 == Change log ==
 
 = Version 0.5.0 =
+
+* Changed AJAX notice for the exclude checkbox from working.gif to added/removed text.
+* Changed jQuery `ajax()` to `fetch()`.
+* Moved `Requires at least` from readme.txt to plugin main PHP file. See https://core.trac.wordpress.org/ticket/48520#comment:18.
+* Added `.gitignore`.
+* Added `composer.json` for dev requirements for testing.
+* Changed automated tests from Travis CI to GitHub Actions.
+* Added PHP_CodeSniffer to use PHP and WordPress coding standards.
+
 = Version 0.4.0 =
 
 * Stricter parsing for stylesheet tags; the `filterTag` function now requires a third parameter.
