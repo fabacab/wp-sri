@@ -201,11 +201,17 @@ class WP_SRI_Plugin {
 	 * @return array|WP_Error Array containing 'headers', 'body', 'response', 'cookies', 'filename', or a WP_Error on failure.
 	 */
 	public function fetch_resource( $rsrc_url ) {
-		$url = ( 0 === strpos( $rsrc_url, '//' ) )
-			? ( ( is_ssl() ) ? "https:$rsrc_url" : "http:$rsrc_url" )
-			: $rsrc_url;
-
+		$url  = $rsrc_url;
 		$args = array();
+
+		if ( 0 === strpos( $rsrc_url, '//' ) ) {
+			$url = is_ssl() ? "https:$rsrc_url" : "http:$rsrc_url";
+		}
+
+		if ( 'local' === wp_get_environment_type() ) {
+			$args['sslverify'] = false;
+		}
+
 		return wp_safe_remote_get( $url, $args );
 	}
 
