@@ -204,7 +204,9 @@ class WP_SRI_Plugin {
 		$url = ( 0 === strpos( $rsrc_url, '//' ) )
 			? ( ( is_ssl() ) ? "https:$rsrc_url" : "http:$rsrc_url" )
 			: $rsrc_url;
-		return wp_remote_get( $url );
+
+		$args = array();
+		return wp_safe_remote_get( $url, $args );
 	}
 
 	/**
