@@ -54,6 +54,7 @@ Learn more [about this filter hook](https://developer.wordpress.org/reference/ho
 * Changed automated tests from Travis CI to GitHub Actions.
 * Changed `Requires at least` location from readme.txt to plugin main PHP file. See https://core.trac.wordpress.org/ticket/48520#comment:18.
 * Changed readme contributors to include those that have contributed to GitHub repo.
+* Changed `fetch_resource()` to use `wp_safe_remote_get()`.
 * Added `.gitignore`.
 * Added `composer.json` for dev requirements for testing.
 * Added PHP_CodeSniffer to validate PHP and WordPress coding standards.
