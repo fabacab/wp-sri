@@ -4,7 +4,8 @@
         "test": "./vendor/bin/phpunit --testdox",
         "test-ajax": "./vendor/bin/phpunit --testdox --group ajax",
         "phpcs-setup": "./vendor/bin/phpcs --config-set installed_paths $PWD/vendor/wp-coding-standards/wpcs,$PWD/vendor/phpcompatibility/php-compatibility,$PWD/vendor/phpcompatibility/phpcompatibility-paragonie,$PWD/vendor/phpcompatibility/phpcompatibility-wp",
-        "phpcs": "./vendor/bin/phpcs"
+        "phpcs": "./vendor/bin/phpcs",
+        "phpcbf": "./vendor/bin/phpcbf"
     },
     "require-dev": {
         "phpunit/phpunit": "^9",
